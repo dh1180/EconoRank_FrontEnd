@@ -3244,3 +3244,179 @@ html[data-theme="dark"] .exchange-pill.active small {
   padding: 1px 7px;
   border-radius: 999px;
 }
+
+
+/* Community Embedded Live Stat Cards & Picker */
+.stat-embed-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin: 12px 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-subtle);
+  box-shadow: var(--shadow-sm);
+  white-space: normal;
+}
+
+.stat-embed-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  color: inherit;
+}
+
+.stat-embed-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.stat-embed-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.stat-embed-title {
+  display: block;
+  font-size: 0.96rem;
+  color: var(--ink);
+}
+
+.stat-embed-title small {
+  color: var(--muted);
+  font-weight: 500;
+  margin-inline-start: 4px;
+}
+
+.stat-embed-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.stat-embed-val {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stat-embed-val small {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.stat-embed-price {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.stat-picker-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+.stat-picker-toggle {
+  justify-self: start;
+  color: var(--accent);
+  border-color: #b7dbd0;
+  background: var(--accent-soft);
+}
+
+.stat-picker-box {
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface-subtle);
+  display: grid;
+  gap: 12px;
+}
+
+.stat-picker-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.stat-picker-tabs button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.stat-picker-tabs button.active {
+  background: var(--obsidian);
+  border-color: var(--obsidian);
+  color: #ffffff;
+}
+
+.stat-picker-form {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.7fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-picker-companies {
+  display: grid;
+  gap: 8px;
+}
+
+.stat-company-results {
+  display: grid;
+  gap: 4px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.stat-company-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.stat-company-option:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.stat-company-name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-company-cap {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 650;
+}
+
+@media (max-width: 760px) {
+  .stat-picker-form {
+    grid-template-columns: 1fr;
+  }
+}

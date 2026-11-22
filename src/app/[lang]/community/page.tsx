@@ -13,7 +13,7 @@ export default async function CommunityPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ post?: string }>;
+  searchParams: Promise<{ post?: string; attach?: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
@@ -26,7 +26,11 @@ export default async function CommunityPage({
         <h1>{t.discussion}</h1>
         <p className="lead">{t.discussionText}</p>
       </section>
-      <Community lang={lang} initialPost={q.post || null} />
+      <Community
+        lang={lang}
+        initialPost={q.post || null}
+        initialAttach={q.attach || null}
+      />
     </>
   );
 }

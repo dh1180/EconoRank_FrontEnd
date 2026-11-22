@@ -99,8 +99,11 @@ export default async function CountryPage({ params }: Props) {
           >
             {t.compare} →
           </Link>
-          <Link className="button button-glass" href={`/${lang}/community`}>
-            {t.community}
+          <Link
+            className="button button-glass"
+            href={`/${lang}/community?attach=${encodeURIComponent(`country:${code}:gdp:${years[0] ?? currentUtcYear}`)}`}
+          >
+            {lang === "ko" ? "이 지표로 토론하기" : t.community}
           </Link>
         </div>
       </section>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { countryName } from "@/lib/geography";
 import { dictionary, type Locale } from "@/lib/i18n";
 import CountryFlag from "@/components/CountryFlag";
+import { StatPicker, StatText } from "@/components/StatEmbed";
 
 type Member = {
   id: string;
@@ -101,9 +102,11 @@ function AuthorTag({
 export default function Community({
   lang,
   initialPost,
+  initialAttach,
 }: {
   lang: Locale;
   initialPost: string | null;
+  initialAttach?: string | null;
 }) {
   const t = dictionary(lang);
   const [member, setMember] = useState<Member | null>(null),
@@ -113,8 +116,17 @@ export default function Community({
     [thread, setThread] = useState<{ post: Post; comments: Comment[] } | null>(
       null,
     );
+  const safeAttach =
+    initialAttach &&
+    /^(?:country:[A-Z]{3}:(?:gdp|gdppc|ppp):\d{4}|company:[A-Za-z0-9.\-^]{1,20})$/.test(
+      initialAttach,
+    )
+      ? `[[stat:${initialAttach}]]\n\n`
+      : "";
   const [auth, setAuth] = useState<"login" | "register" | null>(null),
-    [writing, setWriting] = useState(false),
+    [writing, setWriting] = useState(Boolean(safeAttach)),
+    [draftBody, setDraftBody] = useState(safeAttach),
+    [replyBody, setReplyBody] = useState(""),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false),
@@ -550,10 +562,11 @@ export default function Community({
                       {
                         spaceId: "global",
                         title: data.get("title"),
-                        body: data.get("body"),
+                        body: draftBody,
                         language: lang,
                       },
                     );
+                    setDraftBody("");
                     setWriting(false);
                     openPost(created.id);
                   });
@@ -563,9 +576,24 @@ export default function Community({
                   {t.title}
                   <input name="title" maxLength={160} required />
                 </label>
+                <StatPicker
+                  lang={lang}
+                  onInsert={(token) =>
+                    setDraftBody((prev) =>
+                      prev ? `${prev.trimEnd()}\n${token}\n` : `${token}\n`,
+                    )
+                  }
+                />
                 <label>
                   {t.body}
-                  <textarea name="body" maxLength={10000} rows={8} required />
+                  <textarea
+                    name="body"
+                    maxLength={10000}
+                    rows={8}
+                    value={draftBody}
+                    onChange={(e) => setDraftBody(e.target.value)}
+                    required
+                  />
                 </label>
                 <button className="button" disabled={busy}>
                   {t.publish}
@@ -588,7 +616,7 @@ export default function Community({
                     </span>
                   </div>
                   <h2>{thread.post.title}</h2>
-                  <p className="post-body">{thread.post.body}</p>
+                  <StatText text={thread.post.body} lang={lang} />
                   {actions("post", thread.post)}
                 </article>
                 <section className="panel replies">
@@ -605,7 +633,7 @@ export default function Community({
                           · {new Date(c.createdAt).toLocaleDateString(lang)}
                         </span>
                       </div>
-                      <p className="post-body">{c.body}</p>
+                      <StatText text={c.body} lang={lang} />
                       {actions("comment", c)}
                     </article>
                   ))}
@@ -615,19 +643,33 @@ export default function Community({
                       className="editor"
                       onSubmit={(e) => {
                         e.preventDefault();
-                        const form = e.currentTarget;
-                        const body = new FormData(form).get("body");
                         run(async () => {
                           await mutate(`/posts/${selected}/comments`, "POST", {
-                            body,
+                            body: replyBody,
                           });
-                          form.reset();
+                          setReplyBody("");
                         });
                       }}
                     >
+                      <StatPicker
+                        lang={lang}
+                        onInsert={(token) =>
+                          setReplyBody((prev) =>
+                            prev
+                              ? `${prev.trimEnd()}\n${token}\n`
+                              : `${token}\n`,
+                          )
+                        }
+                      />
                       <label>
                         {t.reply}
-                        <textarea name="body" required maxLength={3000} />
+                        <textarea
+                          name="body"
+                          required
+                          maxLength={3000}
+                          value={replyBody}
+                          onChange={(e) => setReplyBody(e.target.value)}
+                        />
                       </label>
                       <button className="button" disabled={busy}>
                         {t.send}
@@ -664,7 +706,11 @@ export default function Community({
                               {p.title}
                             </button>
                           </h3>
-                          <p className="post-excerpt">{p.body.slice(0, 180)}</p>
+                          <p className="post-excerpt">
+                            {p.body
+                              .replace(/\[\[stat:[^\]]+\]\]/g, lang === "ko" ? "[지표 카드]" : "[Stat Card]")
+                              .slice(0, 180)}
+                          </p>
                           {actions("post", p)}
                         </article>
                       ))
