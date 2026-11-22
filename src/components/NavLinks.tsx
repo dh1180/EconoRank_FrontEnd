@@ -14,7 +14,12 @@ export default function NavLinks({
   labels,
 }: {
   lang: Locale;
-  labels: { rankings: string; compare: string; community: string };
+  labels: {
+    rankings: string;
+    companies: string;
+    compare: string;
+    community: string;
+  };
 }) {
   const pathname = usePathname() || `/${lang}`;
   const items: NavItem[] = [
@@ -25,6 +30,11 @@ export default function NavLinks({
         p === `/${lang}` ||
         p === `/${lang}/` ||
         p.startsWith(`/${lang}/countries`),
+    },
+    {
+      href: `/${lang}/companies`,
+      label: labels.companies,
+      match: (p) => p.startsWith(`/${lang}/companies`),
     },
     {
       href: `/${lang}/compare`,

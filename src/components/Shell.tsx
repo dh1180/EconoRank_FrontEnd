@@ -41,6 +41,7 @@ export default function Shell({
             lang={lang}
             labels={{
               rankings: t.rankings,
+              companies: t.companies,
               compare: t.compare,
               community: t.community,
             }}

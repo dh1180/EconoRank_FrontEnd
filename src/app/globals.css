@@ -2913,3 +2913,54 @@ html[data-theme="dark"] .preset-pill.active {
     display: none;
   }
 }
+
+
+/* Companies Market Cap Table */
+.company-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.company-name {
+  font-weight: 650;
+  font-size: 0.96rem;
+  color: var(--ink);
+}
+
+.ticker-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.03em;
+}
+
+.company-country-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.company-country-link:hover {
+  color: var(--accent);
+}
+
+.price-val {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  font-weight: 550;
+}
+
+@media (max-width: 760px) {
+  .country-col,
+  .price-col {
+    display: none;
+  }
+}

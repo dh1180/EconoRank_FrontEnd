@@ -23,6 +23,23 @@ export type RankingPage = {
   source: string;
   provider: "imf";
 };
+export type Company = {
+  rank: number;
+  name: string;
+  symbol: string;
+  marketCap: number;
+  priceUsd: number;
+  country: string;
+  countryCode: string;
+};
+export type CompanyFeed = {
+  items: Company[];
+  total: number;
+  updatedAt: string;
+  refreshIntervalMinutes: number;
+  source: string;
+  sourceUrl: string;
+};
 export const metrics = ["gdp", "gdppc", "ppp"] as const;
 export type Metric = (typeof metrics)[number];
 export function metricOf(value: string | undefined): Metric {

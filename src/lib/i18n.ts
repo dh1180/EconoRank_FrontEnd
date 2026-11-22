@@ -11,6 +11,7 @@ import type { Locale } from "./locales";
 
 const en = {
   rankings: "Rankings",
+  companies: "Companies",
   compare: "Compare",
   community: "Community",
   tagline: "Explore the data. Join the conversation.",
@@ -99,6 +100,7 @@ export type Dictionary = typeof en;
 
 const ko: Dictionary = {
   rankings: "경제 순위",
+  companies: "기업 시총",
   compare: "국가 비교",
   community: "커뮤니티",
   tagline: "데이터를 탐색하고, 대화에 참여하세요.",
