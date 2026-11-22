@@ -132,11 +132,13 @@ export default function Community({
   const contentTopRef = useRef<HTMLElement>(null);
 
   const vpnNoticeTitle =
-    lang === "ko" ? "접속 국가 자동 설정 · VPN 사용 금지 안내" : "Auto Country Detection · No VPN";
+    lang === "ko"
+      ? "회원가입 시 국가 영구 고정 · VPN 사용 금지"
+      : "Country Locked at Sign-Up · No VPN";
   const vpnNoticeBody =
     lang === "ko"
-      ? "로그인한 접속 국가에 따라 회원님의 국가와 국기가 자동으로 표시됩니다. 정확한 국가 표시와 신뢰할 수 있는 글로벌 토론을 위해 VPN·프록시를 끄고 로그인해 주세요."
-      : "Your country and flag are automatically assigned based on your login location. Please disable any VPN or proxy before signing in to keep global discussions authentic.";
+      ? "회원가입 시 접속한 국가에 따라 회원님의 국가와 국기가 영구 고정됩니다(가입 후 변경 불가). 정확한 국가 표시를 위해 VPN·프록시를 끄고 회원가입해 주세요."
+      : "Your country and flag are permanently locked based on your sign-up location (cannot be changed afterward). Please disable any VPN or proxy before registering.";
 
   useEffect(() => {
     read<Member>("/auth/me")
@@ -385,10 +387,12 @@ export default function Community({
         {auth && (
           <form className="panel editor" onSubmit={authenticate}>
             <h2>{auth === "login" ? t.signIn : t.register}</h2>
-            <div className="vpn-notice" role="note">
-              <strong>{vpnNoticeTitle}</strong>
-              <p>{vpnNoticeBody}</p>
-            </div>
+            {auth === "register" && (
+              <div className="vpn-notice" role="note">
+                <strong>{vpnNoticeTitle}</strong>
+                <p>{vpnNoticeBody}</p>
+              </div>
+            )}
             {auth === "register" && (
               <label>
                 {t.displayName}
