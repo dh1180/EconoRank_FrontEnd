@@ -64,14 +64,7 @@ export default function Shell({
               target="_blank"
               rel="noreferrer"
             >
-              IMF WEO ↗
-            </a>
-            <a
-              href="https://data.worldbank.org"
-              target="_blank"
-              rel="noreferrer"
-            >
-              World Bank Open Data ↗
+              IMF World Economic Outlook (WEO) ↗
             </a>
           </div>
         </div>

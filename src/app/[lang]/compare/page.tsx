@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   api,
-  amount,
+  metricAmount,
   comparisonCodes,
   integer,
   metrics,
@@ -14,7 +14,7 @@ import { isLocale, dictionary } from "@/lib/i18n";
 import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
 import CountrySelector from "@/components/CountrySelector";
-import SourceSelect from "@/components/SourceSelect";
+import CountryFlag from "@/components/CountryFlag";
 import Provenance, { statusName, editionName } from "@/components/Provenance";
 
 export async function generateMetadata({
@@ -51,11 +51,6 @@ export default async function Compare({
           ? raw
           : [raw],
     );
-  const source =
-    typeof q.source === "string" &&
-    ["auto", "imf", "worldbank"].includes(q.source)
-      ? q.source
-      : "auto";
   let year =
     typeof q.year === "string"
       ? integer(q.year, new Date().getUTCFullYear(), 1960, 2100)
@@ -67,11 +62,11 @@ export default async function Compare({
   try {
     [countries, years] = await Promise.all([
       api<Country[]>("/countries"),
-      api<number[]>(`/years?indicator=gdp&source=${source}`),
+      api<number[]>("/years?indicator=gdp&source=imf"),
     ]);
     if (selected.length >= 2 && selected.length <= 5) {
       const data = await api<{ year: number; items: Observation[] }>(
-        `/compare?countries=${selected.join(",")}&source=${source}${year ? `&year=${year}` : ""}`,
+        `/compare?countries=${selected.join(",")}&source=imf${year ? `&year=${year}` : ""}`,
       );
       year = data.year;
       items = data.items;
@@ -87,7 +82,7 @@ export default async function Compare({
     <>
       <section className="page-heading">
         <p className="eyebrow">
-          {lang === "ko" ? "국가별 경제 비교" : "COUNTRY COMPARISON"}
+          {lang === "ko" ? "국가별 경제 비교 · IMF WEO" : "COUNTRY COMPARISON · IMF WEO"}
         </p>
         <h1>{t.compareTitle}</h1>
         <p className="lead">{t.compareIntro}</p>
@@ -100,7 +95,6 @@ export default async function Compare({
             <span>2–5</span>
           </div>
           <div className="selection-fields">
-            <SourceSelect source={source} lang={lang} />
             <label htmlFor="compare-year">{t.year}</label>
             <select id="compare-year" name="year" defaultValue={year}>
               {[...new Set([...(year ? [year] : []), ...years])].map((y) => (
@@ -142,7 +136,12 @@ export default async function Compare({
                   href={`/${lang}/countries/${c.code}`}
                   className="legend-pill"
                 >
-                  <i style={{ background: COMPARE_COLORS[i % COMPARE_COLORS.length] }} />
+                  <i
+                    style={{
+                      background: COMPARE_COLORS[i % COMPARE_COLORS.length],
+                    }}
+                  />
+                  <CountryFlag code={c.code} size="sm" />
                   <span>{countryName(c.code, c.name, lang)}</span>
                   <small>{c.code}</small>
                 </Link>
@@ -168,9 +167,9 @@ export default async function Compare({
                       <p className="metric-caption">
                         {metric === "gdp"
                           ? "NOMINAL GDP"
-                          : metric === "ppp"
-                            ? "PURCHASING POWER PARITY"
-                            : "GOODS & SERVICES"}
+                          : metric === "gdppc"
+                            ? "GDP PER CAPITA"
+                            : "PURCHASING POWER PARITY"}
                       </p>
                       <h2>{t[metric]}</h2>
                     </div>
@@ -198,11 +197,14 @@ export default async function Compare({
                                 style={{ background: barColor }}
                                 aria-hidden="true"
                               />
+                              <CountryFlag code={c.code} size="sm" />
                               <span className="country-code">{c.code}</span>
                               <span>{countryName(c.code, c.name, lang)}</span>
                             </Link>
                             <div className="comparison-value">
-                              <strong>{amount(item?.value, lang)}</strong>
+                              <strong>
+                                {metricAmount(item?.value, metric, lang)}
+                              </strong>
                               <small
                                 className={
                                   item
@@ -219,7 +221,9 @@ export default async function Compare({
                           <div className="comparison-bar">
                             <span
                               style={{
-                                width: item ? `${Math.max(2, (item.value / max) * 100)}%` : "0",
+                                width: item
+                                  ? `${Math.max(2, (item.value / max) * 100)}%`
+                                  : "0",
                                 background: barColor,
                               }}
                             />

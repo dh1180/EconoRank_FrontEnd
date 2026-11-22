@@ -13,8 +13,8 @@ const en = {
   intro:
     "Explore economic rankings, compare countries, and bring your perspective to the conversation.",
   gdp: "Nominal GDP",
+  gdppc: "GDP per capita",
   ppp: "GDP at PPP",
-  exports: "Exports",
   country: "Country / economy",
   rank: "Rank",
   value: "Value",
@@ -98,8 +98,8 @@ const ko: typeof en = {
   intro:
     "경제 순위를 살펴보고, 국가를 비교하고, 데이터에 대한 당신의 관점을 나누세요.",
   gdp: "명목 GDP",
+  gdppc: "1인당 GDP",
   ppp: "구매력평가 GDP",
-  exports: "수출",
   country: "국가 / 경제권",
   rank: "순위",
   value: "금액",

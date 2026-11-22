@@ -6,7 +6,7 @@ export type Observation = Country & {
   unit: string;
   sourceUrl: string;
   retrievedAt: string;
-  provider: "imf" | "worldbank";
+  provider: "imf";
   source: string;
   publishedAt: string;
   edition: string;
@@ -21,9 +21,9 @@ export type RankingPage = {
   indicator: string;
   year: number;
   source: string;
-  provider: "imf" | "worldbank";
+  provider: "imf";
 };
-export const metrics = ["gdp", "ppp", "exports"] as const;
+export const metrics = ["gdp", "gdppc", "ppp"] as const;
 export type Metric = (typeof metrics)[number];
 export function metricOf(value: string | undefined): Metric {
   return metrics.find((m) => m === value) || "gdp";
@@ -53,6 +53,19 @@ export function amount(value: number | undefined, locale: string) {
     notation: "compact",
     maximumFractionDigits: 2,
   }).format(value);
+}
+export function metricAmount(
+  value: number | undefined,
+  metric: Metric,
+  locale: string,
+) {
+  if (value === undefined || !Number.isFinite(value)) return "—";
+  if (metric === "gdppc") {
+    return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+  return amount(value, locale);
 }
 export function fullAmount(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {

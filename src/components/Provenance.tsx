@@ -86,8 +86,8 @@ export default function Provenance({
       <div className="provenance-notes">
         <p className="refresh-note">
           {lang === "ko"
-            ? "명목 GDP·수출: 당해 미국 달러 · PPP: 당해 국제달러 · 수출: 재화 및 서비스 · 결측값은 추정하지 않습니다."
-            : "GDP & exports: current US dollars · PPP: current international dollars · Exports include goods and services · Missing values are not estimated."}
+            ? "출처: IMF World Economic Outlook (WEO) · 명목 GDP·1인당 GDP: 당해 미국 달러(US$) · PPP: 당해 국제달러(Int$) · 결측값은 추정하지 않습니다."
+            : "Source: IMF World Economic Outlook (WEO) · Nominal GDP & GDP per capita: current US dollars · PPP: current international dollars · Missing values are not estimated."}
         </p>
         {checkedAt && (
           <p className="refresh-note mono">

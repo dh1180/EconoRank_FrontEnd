@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
+import CountryFlag from "@/components/CountryFlag";
 import type { Country } from "@/lib/api";
 import type { Locale } from "@/lib/i18n";
 
@@ -57,6 +58,7 @@ export default function CountrySelector({
                 style={{ background: dotColor }}
                 aria-hidden="true"
               />
+              <CountryFlag code={code} size="sm" />
               {countryName(code, c?.name || code, lang)}
               <span aria-hidden="true">×</span>
             </button>

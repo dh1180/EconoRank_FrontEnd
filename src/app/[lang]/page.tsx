@@ -1,12 +1,12 @@
 import { countryName, regionName } from "@/lib/geography";
 import Provenance, { statusName } from "@/components/Provenance";
-import SourceSelect from "@/components/SourceSelect";
+import CountryFlag from "@/components/CountryFlag";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { isLocale, dictionary } from "@/lib/i18n";
 import {
   api,
-  amount,
+  metricAmount,
   fullAmount,
   integer,
   metricOf,
@@ -24,10 +24,10 @@ export async function generateMetadata({
   return {
     title:
       lang === "ko"
-        ? "세계 GDP·PPP·수출 순위"
-        : "World GDP, PPP & export rankings",
+        ? "세계 GDP·1인당 GDP·PPP 순위"
+        : "World GDP, GDP per capita & PPP rankings",
     alternates: { canonical: `/${lang}`, languages: { en: "/en", ko: "/ko" } },
-    openGraph: { title: "StatAgora · Global economic rankings" },
+    openGraph: { title: "StatAgora · Global economic rankings (IMF WEO)" },
   };
 }
 
@@ -44,12 +44,6 @@ export default async function Rankings({
   const query = await searchParams;
   const metric = metricOf(query.indicator),
     page = integer(query.page, 0, 0, 10000);
-  const source =
-    metric === "exports"
-      ? "worldbank"
-      : ["auto", "imf", "worldbank"].includes(query.source || "")
-        ? query.source!
-        : "auto";
   let year = query.year
     ? integer(query.year, new Date().getUTCFullYear(), 1960, 2100)
     : undefined;
@@ -59,21 +53,19 @@ export default async function Rankings({
   try {
     [data, years] = await Promise.all([
       api<RankingPage>(
-        `/rankings?indicator=${metric}&source=${source}${year ? `&year=${year}` : ""}&page=${page}&size=25`,
+        `/rankings?indicator=${metric}&source=imf${year ? `&year=${year}` : ""}&page=${page}&size=25`,
       ),
-      api<number[]>(`/years?indicator=${metric}&source=${source}`),
+      api<number[]>(`/years?indicator=${metric}&source=imf`),
     ]);
     year = data.year;
     const status = await api<{
       sources: { provider: string; checkedAt: string }[];
     }>("/data/status");
-    checkedAt = status.sources.find(
-      (s) => s.provider === data?.provider,
-    )?.checkedAt;
+    checkedAt = status.sources.find((s) => s.provider === "imf")?.checkedAt;
   } catch {}
 
   const url = (p: number) =>
-    `/${lang}?indicator=${metric}&source=${source}&year=${year}&page=${p}#rankings`;
+    `/${lang}?indicator=${metric}&year=${year}&page=${p}#rankings`;
   const topFive = data?.items.slice(0, 5) ?? [];
   const topLeaderValue = data?.items[0]?.value ?? 1;
   const unitLabel = metric === "ppp" ? "Int$" : "US$";
@@ -110,7 +102,10 @@ export default async function Rankings({
           </div>
         </div>
 
-        <div className="hero-snapshot" aria-label={lang === "ko" ? "상위 5개국 요약" : "Top 5 economies snapshot"}>
+        <div
+          className="hero-snapshot"
+          aria-label={lang === "ko" ? "상위 5개국 요약" : "Top 5 economies snapshot"}
+        >
           <div className="snapshot-head">
             <div>
               <span className="snapshot-kicker">
@@ -128,19 +123,23 @@ export default async function Rankings({
                 const pct = Math.max(4, (row.value / topLeaderValue) * 100);
                 return (
                   <li key={row.code}>
-                    <Link href={`/${lang}/countries/${row.code}`} className="snapshot-row">
+                    <Link
+                      href={`/${lang}/countries/${row.code}`}
+                      className="snapshot-row"
+                    >
                       <div className="snapshot-row-top">
                         <span className="snapshot-country">
                           <span className={`snapshot-rank rank-${row.rank}`}>
                             {row.rank.toString().padStart(2, "0")}
                           </span>
+                          <CountryFlag code={row.code} size="sm" />
                           <span className="snapshot-code">{row.code}</span>
                           <span className="snapshot-name">
                             {countryName(row.code, row.name, lang)}
                           </span>
                         </span>
                         <span className="snapshot-val">
-                          {amount(row.value, lang)}
+                          {metricAmount(row.value, metric, lang)}
                         </span>
                       </div>
                       <div className="snapshot-track">
@@ -154,13 +153,11 @@ export default async function Rankings({
           ) : (
             <div className="snapshot-empty">
               <p>STAT / AGORA</p>
-              <strong>IMF WEO · World Bank WDI</strong>
+              <strong>IMF World Economic Outlook (WEO)</strong>
             </div>
           )}
           <div className="snapshot-foot">
-            <span>
-              {data?.provider === "imf" ? "IMF WEO" : "World Bank WDI"}
-            </span>
+            <span>IMF WEO</span>
             <a href="#rankings">
               {lang === "ko" ? "전체 순위 보기 ↓" : "Full rankings ↓"}
             </a>
@@ -173,7 +170,9 @@ export default async function Rankings({
           <span className="stat-label">{t.countries}</span>
           <strong className="stat-value">{data?.total ?? "—"}</strong>
           <small className="stat-sub">
-            {lang === "ko" ? "지역 합계 제외 · 공식 경제권" : "Official economies · aggregates excluded"}
+            {lang === "ko"
+              ? "지역 합계 제외 · 공식 경제권"
+              : "Official economies · aggregates excluded"}
           </small>
         </div>
         <div className="stat-card">
@@ -190,19 +189,13 @@ export default async function Rankings({
         <div className="stat-card">
           <span className="stat-label">{t.source}</span>
           <strong className="stat-value source-stat">
-            {data?.provider === "imf" ? (
-              <>
-                IMF <small>WEO</small>
-              </>
-            ) : (
-              <>
-                World Bank <small>WDI</small>
-              </>
-            )}
+            IMF <small>WEO</small>
           </strong>
           <small className="stat-sub stat-live">
             <span className="sync-dot" aria-hidden="true" />
-            {lang === "ko" ? "6시간마다 공식 발표 자동 확인" : "Auto-checked every 6 hours"}
+            {lang === "ko"
+              ? "6시간마다 IMF 공식 발표 자동 확인"
+              : "IMF WEO auto-checked every 6 hours"}
           </small>
         </div>
       </section>
@@ -210,14 +203,11 @@ export default async function Rankings({
       <section id="rankings" className="panel rankings">
         <div className="section-head">
           <div>
-            <p className="eyebrow">ECONOMIC EXPLORER</p>
+            <p className="eyebrow">ECONOMIC EXPLORER · IMF WEO</p>
             <h2>{t.rankings}</h2>
           </div>
           <form className="inline-form">
             <input type="hidden" name="indicator" value={metric} />
-            {metric !== "exports" && (
-              <SourceSelect source={source} lang={lang} />
-            )}
             <label htmlFor="year">{t.year}</label>
             <select id="year" name="year" defaultValue={year}>
               {[...new Set([...(year ? [year] : []), ...years])]
@@ -239,7 +229,7 @@ export default async function Rankings({
                 key={m}
                 className={m === metric ? "active" : ""}
                 aria-current={m === metric ? "page" : undefined}
-                href={`/${lang}?indicator=${m}&source=${m === "exports" ? "worldbank" : source}#rankings`}
+                href={`/${lang}?indicator=${m}${year ? `&year=${year}` : ""}#rankings`}
               >
                 {t[m]}
               </Link>
@@ -306,6 +296,7 @@ export default async function Rankings({
                           className="country-name"
                           href={`/${lang}/countries/${row.code}`}
                         >
+                          <CountryFlag code={row.code} size="md" />
                           <span className="country-code">{row.code}</span>
                           <span className="country-meta">
                             <span className="country-label">
@@ -319,7 +310,7 @@ export default async function Rankings({
                       </td>
                       <td className="numeric" title={fullAmount(row.value, lang)}>
                         <span className="amount-val">
-                          {amount(row.value, lang)}
+                          {metricAmount(row.value, metric, lang)}
                         </span>
                         <small
                           className={`value-status ${row.status === "ACTUAL" ? "actual" : "forecast"}`}

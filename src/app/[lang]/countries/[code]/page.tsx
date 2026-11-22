@@ -1,11 +1,12 @@
 import { countryName, regionName } from "@/lib/geography";
 import Provenance, { statusName } from "@/components/Provenance";
+import CountryFlag from "@/components/CountryFlag";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   api,
-  amount,
+  metricAmount,
   fullAmount,
   metrics,
   type Country,
@@ -48,7 +49,7 @@ export default async function CountryPage({ params }: Props) {
   const t = dictionary(lang);
   let data: Profile;
   try {
-    data = await api<Profile>(`/countries/${code}`);
+    data = await api<Profile>(`/countries/${code}?source=imf`);
   } catch (error) {
     if (error instanceof Error && error.message.includes("404")) notFound();
     return (
@@ -84,8 +85,11 @@ export default async function CountryPage({ params }: Props) {
             <span aria-hidden="true">·</span>
             <span className="mono">{code}</span>
           </div>
-          <h1>{countryName(code, data.country.name, lang)}</h1>
-          <p className="lead">{t.countryTitle}</p>
+          <h1 className="country-hero-title">
+            <CountryFlag code={code} size="lg" />
+            <span>{countryName(code, data.country.name, lang)}</span>
+          </h1>
+          <p className="lead">{t.countryTitle} · IMF WEO</p>
         </div>
         <div className="hero-actions">
           <Link
@@ -119,7 +123,7 @@ export default async function CountryPage({ params }: Props) {
               className="stat-value"
               title={latest ? fullAmount(latest.value, lang) : undefined}
             >
-              {amount(latest?.value, lang)}
+              {metricAmount(latest?.value, metric, lang)}
             </strong>
             <div className="stat-meta-row">
               {latest ? (
@@ -151,7 +155,7 @@ export default async function CountryPage({ params }: Props) {
             </p>
             <h2>{t.history}</h2>
           </div>
-          <span className="unit-badge">IMF WEO · World Bank WDI</span>
+          <span className="unit-badge">IMF WEO</span>
         </div>
         <div className="table-wrap">
           <table>
@@ -186,7 +190,7 @@ export default async function CountryPage({ params }: Props) {
                         title={item ? fullAmount(item.value, lang) : undefined}
                       >
                         <span className="amount-val">
-                          {amount(item?.value, lang)}
+                          {metricAmount(item?.value, m, lang)}
                         </span>
                         {item && (
                           <span className="cell-badges">
