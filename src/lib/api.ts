@@ -33,9 +33,16 @@ export type Company = {
   countryCode: string;
   exchange: string;
 };
+export type ExchangeSummary = {
+  code: string;
+  count: number;
+  totalMarketCap: number;
+};
 export type CompanyFeed = {
   items: Company[];
   total: number;
+  exchangeTotal?: number;
+  exchanges?: ExchangeSummary[];
   updatedAt: string;
   refreshIntervalMinutes: number;
   source: string;

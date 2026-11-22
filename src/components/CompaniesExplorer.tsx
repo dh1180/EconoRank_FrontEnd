@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { amount, fullAmount, type Company, type CompanyFeed } from "@/lib/api";
 import { countryName } from "@/lib/geography";
@@ -31,6 +31,7 @@ const EXCHANGE_LABELS_KO: Record<string, string> = {
   XETRA: "독일 (XETRA)",
   "Euronext Paris": "프랑스 (파리)",
   "Euronext Amsterdam": "네덜란드 (암스테르담)",
+  "Euronext Brussels": "벨기에 (브뤼셀)",
   "SIX Swiss": "스위스 (SIX)",
   "NSE India": "인도 (NSE)",
   TSX: "캐나다 (토론토 TSX)",
@@ -38,10 +39,30 @@ const EXCHANGE_LABELS_KO: Record<string, string> = {
   B3: "브라질 (B3)",
   "Nasdaq Copenhagen": "덴마크 (코펜하겐)",
   "Nasdaq Stockholm": "스웨덴 (스톡홀름)",
+  "Nasdaq Helsinki": "핀란드 (헬싱키)",
+  "Oslo Børs": "노르웨이 (오슬로)",
   "BME Madrid": "스페인 (마드리드)",
   "Borsa Italiana": "이탈리아 (밀라노)",
   SGX: "싱가포르 (SGX)",
   IDX: "인도네시아 (IDX)",
+  SET: "태국 (SET)",
+  "GPW Warsaw": "폴란드 (바르샤바)",
+  TASE: "이스라엘 (텔아비브)",
+  JSE: "남아공 (요하네스버그)",
+  BMV: "멕시코 (BMV)",
+  "UAE (ADX/DFM)": "아랍에미리트 (ADX·DFM)",
+  "Boursa Kuwait": "쿠웨이트",
+  "QSE Qatar": "카타르 (QSE)",
+  "Borsa Istanbul": "튀르키예 (이스탄불)",
+  "Bursa Malaysia": "말레이시아",
+  Vienna: "오스트리아 (빈)",
+  "Euronext Lisbon": "포르투갈 (리스본)",
+  NZX: "뉴질랜드 (NZX)",
+  Athens: "그리스 (아테네)",
+  "PSE Manila": "필리핀 (마닐라)",
+  "HOSE Vietnam": "베트남 (호찌민)",
+  Santiago: "칠레 (산티아고)",
+  BYMA: "아르헨티나 (BYMA)",
 };
 
 const EXCHANGE_FLAGS: Record<string, string> = {
@@ -57,6 +78,7 @@ const EXCHANGE_FLAGS: Record<string, string> = {
   XETRA: "DEU",
   "Euronext Paris": "FRA",
   "Euronext Amsterdam": "NLD",
+  "Euronext Brussels": "BEL",
   "SIX Swiss": "CHE",
   "NSE India": "IND",
   TSX: "CAN",
@@ -64,10 +86,30 @@ const EXCHANGE_FLAGS: Record<string, string> = {
   B3: "BRA",
   "Nasdaq Copenhagen": "DNK",
   "Nasdaq Stockholm": "SWE",
+  "Nasdaq Helsinki": "FIN",
+  "Oslo Børs": "NOR",
   "BME Madrid": "ESP",
   "Borsa Italiana": "ITA",
   SGX: "SGP",
   IDX: "IDN",
+  SET: "THA",
+  "GPW Warsaw": "POL",
+  TASE: "ISR",
+  JSE: "ZAF",
+  BMV: "MEX",
+  "UAE (ADX/DFM)": "ARE",
+  "Boursa Kuwait": "KWT",
+  "QSE Qatar": "QAT",
+  "Borsa Istanbul": "TUR",
+  "Bursa Malaysia": "MYS",
+  Vienna: "AUT",
+  "Euronext Lisbon": "PRT",
+  NZX: "NZL",
+  Athens: "GRC",
+  "PSE Manila": "PHL",
+  "HOSE Vietnam": "VNM",
+  Santiago: "CHL",
+  BYMA: "ARG",
 };
 
 const PAGE_SIZE = 25;
@@ -103,44 +145,46 @@ export default function CompaniesExplorer({
   const [exchangeFilter, setExchangeFilter] = useState<string>("ALL");
   const [countryFilter, setCountryFilter] = useState<string>("ALL");
   const [page, setPage] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loadingExchange, setLoadingExchange] = useState(false);
+  const [showAllExchanges, setShowAllExchanges] = useState(false);
+  const cacheRef = useRef<Map<string, CompanyFeed>>(
+    new Map([["ALL", initialFeed]]),
+  );
 
-  async function refreshLive() {
-    if (refreshing) return;
-    setRefreshing(true);
+  async function selectExchange(nextExchange: string, force = false) {
+    setExchangeFilter(nextExchange);
+    setCountryFilter("ALL");
+    setPage(0);
+    if (!force && cacheRef.current.has(nextExchange)) {
+      setFeed(cacheRef.current.get(nextExchange)!);
+      return;
+    }
+    setLoadingExchange(true);
     try {
-      const res = await fetch("/api/companies?limit=1000", {
-        cache: "no-store",
-      });
+      const url =
+        nextExchange === "ALL"
+          ? "/api/companies?limit=250"
+          : `/api/companies?exchange=${encodeURIComponent(nextExchange)}&limit=100`;
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const next = (await res.json()) as CompanyFeed;
+        cacheRef.current.set(nextExchange, next);
         setFeed(next);
       }
     } catch {
     } finally {
-      setRefreshing(false);
+      setLoadingExchange(false);
     }
   }
 
   const items = feed.items;
+  const exchanges = feed.exchanges ?? initialFeed.exchanges ?? [];
+  const visibleExchanges = showAllExchanges ? exchanges : exchanges.slice(0, 14);
+
   const totalCap = useMemo(
     () => items.reduce((sum, c) => sum + c.marketCap, 0),
     [items],
   );
-
-  const exchangeList = useMemo(() => {
-    const map = new Map<string, { code: string; count: number; cap: number }>();
-    for (const c of items) {
-      const key = c.exchange || "Other";
-      const cur = map.get(key) ?? { code: key, count: 0, cap: 0 };
-      cur.count += 1;
-      cur.cap += c.marketCap;
-      map.set(key, cur);
-    }
-    return [...map.values()]
-      .filter((e) => e.code !== "Other" && e.count >= 2)
-      .sort((a, b) => b.cap - a.cap);
-  }, [items]);
 
   const countryShares = useMemo(() => {
     const map = new Map<
@@ -168,9 +212,6 @@ export default function CompaniesExplorer({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((c) => {
-      if (exchangeFilter !== "ALL" && c.exchange !== exchangeFilter) {
-        return false;
-      }
       const key = c.countryCode || c.country || "OTHER";
       if (countryFilter !== "ALL" && key !== countryFilter) return false;
       if (!q) return true;
@@ -186,7 +227,7 @@ export default function CompaniesExplorer({
         c.countryCode.toLowerCase().includes(q)
       );
     });
-  }, [items, query, exchangeFilter, countryFilter, lang]);
+  }, [items, query, countryFilter, lang]);
 
   const localTopCap = filtered[0]?.marketCap ?? items[0]?.marketCap ?? 1;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -232,15 +273,24 @@ export default function CompaniesExplorer({
 
   return (
     <>
-      {exchangeList.length > 0 && (
-        <div className="exchange-bar" role="region" aria-label={lang === "ko" ? "국가 거래소별 순위" : "Rankings by stock exchange"}>
+      {exchanges.length > 0 && (
+        <div
+          className="exchange-bar"
+          role="region"
+          aria-label={
+            lang === "ko" ? "국가 거래소별 주식 순위" : "Rankings by stock exchange"
+          }
+        >
           <div className="exchange-bar-head">
             <span className="region-share-title">
-              {lang === "ko" ? "국가 거래소별 주식 순위" : "Rankings by Stock Exchange"}
+              {lang === "ko"
+                ? `국가 거래소별 주식 순위 (${exchanges.length}개 거래소 · 각 Top 100)`
+                : `Stock Rankings by Exchange (${exchanges.length} exchanges · Top 100 each)`}
             </span>
             {isExchangeView && (
               <span className="exchange-active-note mono">
-                {exchangeLabel(exchangeFilter, lang)} · {filtered.length}
+                {exchangeLabel(exchangeFilter, lang)} · Top {items.length} /{" "}
+                {feed.exchangeTotal ?? items.length}
               </span>
             )}
           </div>
@@ -248,26 +298,21 @@ export default function CompaniesExplorer({
             <button
               type="button"
               className={`exchange-pill ${exchangeFilter === "ALL" ? "active" : ""}`}
-              onClick={() => {
-                setExchangeFilter("ALL");
-                setPage(0);
-              }}
+              onClick={() => selectExchange("ALL")}
             >
-              <span>{lang === "ko" ? "전체 글로벌" : "All Global"}</span>
-              <small className="mono">{items.length}</small>
+              <span>{lang === "ko" ? "전체 글로벌 Top 250" : "Global Top 250"}</span>
+              <small className="mono">{feed.total.toLocaleString()}</small>
             </button>
-            {exchangeList.map((ex) => {
+            {visibleExchanges.map((ex) => {
               const flagCode = EXCHANGE_FLAGS[ex.code];
               return (
                 <button
                   key={ex.code}
                   type="button"
                   className={`exchange-pill ${exchangeFilter === ex.code ? "active" : ""}`}
-                  onClick={() => {
-                    setExchangeFilter((cur) => (cur === ex.code ? "ALL" : ex.code));
-                    setCountryFilter("ALL");
-                    setPage(0);
-                  }}
+                  onClick={() =>
+                    selectExchange(exchangeFilter === ex.code ? "ALL" : ex.code)
+                  }
                 >
                   {flagCode && <CountryFlag code={flagCode} size="sm" />}
                   <span>{exchangeLabel(ex.code, lang)}</span>
@@ -275,6 +320,21 @@ export default function CompaniesExplorer({
                 </button>
               );
             })}
+            {exchanges.length > 14 && (
+              <button
+                type="button"
+                className="exchange-pill exchange-more-btn"
+                onClick={() => setShowAllExchanges((v) => !v)}
+              >
+                {showAllExchanges
+                  ? lang === "ko"
+                    ? "접기 ▲"
+                    : "Show less ▲"
+                  : lang === "ko"
+                    ? `+${exchanges.length - 14}개 거래소 더보기 ▼`
+                    : `+${exchanges.length - 14} more exchanges ▼`}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -284,7 +344,7 @@ export default function CompaniesExplorer({
           <div className="region-share-head">
             <span className="region-share-title">
               {lang === "ko"
-                ? `상위 ${items.length}개 기업 국가별 시총 비중`
+                ? `글로벌 상위 ${items.length}개 기업 국가별 시총 비중`
                 : `Top ${items.length} market cap share by country`}
             </span>
             <span className="region-share-total mono">
@@ -292,7 +352,11 @@ export default function CompaniesExplorer({
               {amount(totalCap, lang)} US$
             </span>
           </div>
-          <div className="region-stacked-bar" role="group" aria-label="Country market cap breakdown">
+          <div
+            className="region-stacked-bar"
+            role="group"
+            aria-label="Country market cap breakdown"
+          >
             {topCountries.map((seg, idx) => {
               const pct = (seg.cap / totalCap) * 100;
               if (pct < 0.7) return null;
@@ -388,13 +452,13 @@ export default function CompaniesExplorer({
           <button
             type="button"
             className="small-button csv-btn"
-            disabled={refreshing}
-            onClick={refreshLive}
+            disabled={loadingExchange}
+            onClick={() => selectExchange(exchangeFilter, true)}
           >
-            {refreshing
+            {loadingExchange
               ? lang === "ko"
-                ? "갱신 중…"
-                : "Refreshing…"
+                ? "불러오는 중…"
+                : "Loading…"
               : lang === "ko"
                 ? "↻ 시세 확인"
                 : "↻ Refresh"}
@@ -409,7 +473,13 @@ export default function CompaniesExplorer({
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {loadingExchange ? (
+        <div className="panel-pad">
+          <p className="notice" role="status">
+            {t.loading}
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="panel-pad">
           <p className="notice">{t.empty}</p>
         </div>
@@ -425,7 +495,9 @@ export default function CompaniesExplorer({
               <tr>
                 <th scope="col">{t.rank}</th>
                 <th scope="col">
-                  {lang === "ko" ? "기업 / 티커 · 거래소" : "Company / Ticker · Exchange"}
+                  {lang === "ko"
+                    ? "기업 / 티커 · 거래소"
+                    : "Company / Ticker · Exchange"}
                 </th>
                 <th scope="col" className="country-col">
                   {t.country}
@@ -558,8 +630,8 @@ export default function CompaniesExplorer({
             </p>
             <p className="provenance-desc">
               {lang === "ko"
-                ? `전 세계 상위 ${items.length}개 상장 기업의 시가총액(USD)을 ${feed.refreshIntervalMinutes}분 TTL 캐시로 요청 시에만 효율적으로 갱신합니다.`
-                : `Top ${items.length} global public company market caps (USD), refreshed lazily on demand with a ${feed.refreshIntervalMinutes}-minute TTL cache.`}
+                ? `전 세계 ${feed.total.toLocaleString()}개 상장 기업·${exchanges.length}개 국가 거래소 데이터를 ${feed.refreshIntervalMinutes}분 TTL 캐시로 요청 시에만 효율적으로 갱신합니다.`
+                : `${feed.total.toLocaleString()} global public companies across ${exchanges.length} stock exchanges, refreshed lazily on demand with a ${feed.refreshIntervalMinutes}-minute TTL cache.`}
             </p>
           </div>
           <div className="sync-pill">

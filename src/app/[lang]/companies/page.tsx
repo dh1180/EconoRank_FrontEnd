@@ -37,7 +37,7 @@ export default async function CompaniesPage({
 
   let feed: CompanyFeed | undefined;
   try {
-    feed = await api<CompanyFeed>("/companies?limit=1000");
+    feed = await api<CompanyFeed>("/companies?limit=250");
   } catch {}
 
   const topFive = feed?.items.slice(0, 5) ?? [];
@@ -144,15 +144,15 @@ export default async function CompaniesPage({
       <section className="stats" aria-label="Market cap summary">
         <div className="stat-card">
           <span className="stat-label">
-            {lang === "ko" ? "추적 글로벌 기업" : "Tracked Companies"}
+            {lang === "ko" ? "전체 추적 글로벌 상장사" : "Global Listed Companies"}
           </span>
           <strong className="stat-value">
-            {feed ? `Top ${feed.items.length}` : "—"}
+            {feed ? feed.total.toLocaleString() : "—"}
           </strong>
           <small className="stat-sub">
             {lang === "ko"
-              ? `전체 ${feed?.total ?? 500}개 상위 상장사 기준`
-              : `From top ${feed?.total ?? 500} global public firms`}
+              ? `${feed?.exchanges?.length ?? 0}개 국가 거래소별 Top 100 지원`
+              : `Top 100 across ${feed?.exchanges?.length ?? 0} national exchanges`}
           </small>
         </div>
         <div className="stat-card">
