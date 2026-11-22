@@ -2,8 +2,14 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { countryName } from "@/lib/geography";
 import { dictionary, type Locale } from "@/lib/i18n";
-import type { Country } from "@/lib/api";
-type Member = { id: string; displayName: string; role: string };
+import CountryFlag from "@/components/CountryFlag";
+
+type Member = {
+  id: string;
+  displayName: string;
+  role: string;
+  countryCode?: string | null;
+};
 type Post = {
   id: string;
   title: string;
@@ -11,6 +17,7 @@ type Post = {
   language: string;
   author: string;
   authorId: string;
+  authorCountry?: string | null;
   createdAt: string;
   spaceId: string;
 };
@@ -19,6 +26,7 @@ type Comment = {
   body: string;
   author: string;
   authorId: string;
+  authorCountry?: string | null;
   createdAt: string;
 };
 type Feed = { items: Post[]; total: number };
@@ -31,6 +39,7 @@ type Report = {
   content: string;
   postId: string;
 };
+
 async function read<T>(path: string): Promise<T> {
   const response = await fetch(`/api${path}`, { cache: "no-store" });
   if (!response.ok) {
@@ -42,6 +51,7 @@ async function read<T>(path: string): Promise<T> {
   }
   return response.json();
 }
+
 async function mutate<T>(
   path: string,
   method: string,
@@ -65,20 +75,38 @@ async function mutate<T>(
   }
   return response.json();
 }
+
+function AuthorTag({
+  name,
+  countryCode,
+  lang,
+}: {
+  name: string;
+  countryCode?: string | null;
+  lang: Locale;
+}) {
+  return (
+    <span className="author-badge">
+      {countryCode && <CountryFlag code={countryCode} size="sm" />}
+      <strong>{name}</strong>
+      {countryCode && (
+        <span className="author-country-tag">
+          {countryName(countryCode, countryCode, lang)}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function Community({
   lang,
-  countries,
-  initialSpace,
   initialPost,
 }: {
   lang: Locale;
-  countries: Country[];
-  initialSpace: string;
   initialPost: string | null;
 }) {
   const t = dictionary(lang);
   const [member, setMember] = useState<Member | null>(null),
-    [space, setSpace] = useState(initialSpace),
     [page, setPage] = useState(0);
   const [feed, setFeed] = useState<Feed>({ items: [], total: 0 }),
     [selected, setSelected] = useState<string | null>(initialPost),
@@ -102,11 +130,20 @@ export default function Community({
     [reports, setReports] = useState<Report[]>([]),
     [admin, setAdmin] = useState(false);
   const contentTopRef = useRef<HTMLElement>(null);
+
+  const vpnNoticeTitle =
+    lang === "ko" ? "접속 국가 자동 설정 · VPN 사용 금지 안내" : "Auto Country Detection · No VPN";
+  const vpnNoticeBody =
+    lang === "ko"
+      ? "로그인한 접속 국가에 따라 회원님의 국가와 국기가 자동으로 표시됩니다. 정확한 국가 표시와 신뢰할 수 있는 글로벌 토론을 위해 VPN·프록시를 끄고 로그인해 주세요."
+      : "Your country and flag are automatically assigned based on your login location. Please disable any VPN or proxy before signing in to keep global discussions authentic.";
+
   useEffect(() => {
     read<Member>("/auth/me")
       .then(setMember)
       .catch(() => setMember(null));
   }, []);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -117,9 +154,7 @@ export default function Community({
         ).then((data) => {
           if (!cancelled) setThread(data);
         })
-      : read<Feed>(
-          `/posts?space=${encodeURIComponent(space)}&page=${page}&size=20`,
-        ).then((data) => {
+      : read<Feed>(`/posts?space=global&page=${page}&size=20`).then((data) => {
           if (!cancelled) {
             setFeed(data);
             setThread(null);
@@ -135,7 +170,8 @@ export default function Community({
     return () => {
       cancelled = true;
     };
-  }, [space, page, selected, revision, member]);
+  }, [page, selected, revision, member]);
+
   useEffect(() => {
     if (member) {
       read<{ id: string; displayName: string }[]>("/blocks")
@@ -143,12 +179,14 @@ export default function Community({
         .catch(() => {});
     } else setBlocks([]);
   }, [member, revision]);
+
   useEffect(() => {
     if (admin && member?.role === "ADMIN")
       read<Report[]>("/admin/reports")
         .then(setReports)
         .catch((e) => setError(e.message));
   }, [admin, member, revision]);
+
   async function run(action: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
@@ -163,6 +201,7 @@ export default function Community({
       setBusy(false);
     }
   }
+
   function openPost(id: string | null) {
     setSelected(id);
     setThread(null);
@@ -172,6 +211,7 @@ export default function Community({
     window.history.replaceState(null, "", url);
     contentTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
   async function authenticate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -189,6 +229,7 @@ export default function Community({
       form.reset();
     });
   }
+
   function actions(type: "post" | "comment", item: Post | Comment) {
     return (
       member && (
@@ -234,6 +275,7 @@ export default function Community({
       )
     );
   }
+
   return (
     <div className="community-layout">
       <aside>
@@ -244,7 +286,17 @@ export default function Community({
                 {member.displayName.slice(0, 1).toUpperCase()}
               </span>
             )}
-            <h2>{member ? member.displayName : t.account}</h2>
+            <div>
+              <h2>{member ? member.displayName : t.account}</h2>
+              {member?.countryCode && (
+                <span className="member-country-pill">
+                  <CountryFlag code={member.countryCode} size="sm" />
+                  <span>
+                    {countryName(member.countryCode, member.countryCode, lang)}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
           {member ? (
             <>
@@ -285,30 +337,17 @@ export default function Community({
             </div>
           )}
         </section>
+
         <section className="panel account-panel">
-          <label htmlFor="space">{t.space}</label>
-          <select
-            id="space"
-            value={space}
-            onChange={(e) => {
-              setSpace(e.target.value);
-              setPage(0);
-              openPost(null);
-              setWriting(false);
-              const url = new URL(window.location.href);
-              url.searchParams.set("space", e.target.value);
-              window.history.replaceState(null, "", url);
-            }}
-          >
-            <option value="global">{t.global}</option>
-            {countries.map((c) => (
-              <option key={c.code} value={`country-${c.code}`}>
-                {countryName(c.code, c.name, lang)}
-              </option>
-            ))}
-          </select>
-          <p className="guidelines">{t.guidelines}</p>
+          <div className="vpn-notice" role="note">
+            <strong>{vpnNoticeTitle}</strong>
+            <p>{vpnNoticeBody}</p>
+          </div>
+          <p className="guidelines" style={{ marginTop: 14, marginBottom: 0 }}>
+            {t.guidelines}
+          </p>
         </section>
+
         {blocks.length > 0 && (
           <section className="panel account-panel">
             <h3>{t.blocked}</h3>
@@ -331,6 +370,7 @@ export default function Community({
           </section>
         )}
       </aside>
+
       <section className="discussion-content" ref={contentTopRef}>
         {error && (
           <p className="notice error" role="alert">
@@ -345,6 +385,10 @@ export default function Community({
         {auth && (
           <form className="panel editor" onSubmit={authenticate}>
             <h2>{auth === "login" ? t.signIn : t.register}</h2>
+            <div className="vpn-notice" role="note">
+              <strong>{vpnNoticeTitle}</strong>
+              <p>{vpnNoticeBody}</p>
+            </div>
             {auth === "register" && (
               <label>
                 {t.displayName}
@@ -473,18 +517,7 @@ export default function Community({
         ) : (
           <>
             <div className="section-head">
-              <h2>
-                {selected
-                  ? t.reply
-                  : space === "global"
-                    ? t.global
-                    : countryName(
-                        space.replace("country-", ""),
-                        countries.find((c) => `country-${c.code}` === space)
-                          ?.name || space,
-                        lang,
-                      )}
-              </h2>
+              <h2>{selected ? t.reply : t.global}</h2>
               {selected ? (
                 <button className="small-button" onClick={() => openPost(null)}>
                   {t.back}
@@ -511,7 +544,7 @@ export default function Community({
                       "/posts",
                       "POST",
                       {
-                        spaceId: space,
+                        spaceId: "global",
                         title: data.get("title"),
                         body: data.get("body"),
                         language: lang,
@@ -540,10 +573,16 @@ export default function Community({
             ) : selected && thread ? (
               <>
                 <article className="panel thread">
-                  <p className="post-meta">
-                    {thread.post.author} ·{" "}
-                    {new Date(thread.post.createdAt).toLocaleDateString(lang)}
-                  </p>
+                  <div className="post-meta post-meta-row">
+                    <AuthorTag
+                      name={thread.post.author}
+                      countryCode={thread.post.authorCountry}
+                      lang={lang}
+                    />
+                    <span>
+                      · {new Date(thread.post.createdAt).toLocaleDateString(lang)}
+                    </span>
+                  </div>
                   <h2>{thread.post.title}</h2>
                   <p className="post-body">{thread.post.body}</p>
                   {actions("post", thread.post)}
@@ -552,10 +591,16 @@ export default function Community({
                   <h3>{t.reply}</h3>
                   {thread.comments.map((c) => (
                     <article key={c.id}>
-                      <p className="post-meta">
-                        {c.author} ·{" "}
-                        {new Date(c.createdAt).toLocaleDateString(lang)}
-                      </p>
+                      <div className="post-meta post-meta-row">
+                        <AuthorTag
+                          name={c.author}
+                          countryCode={c.authorCountry}
+                          lang={lang}
+                        />
+                        <span>
+                          · {new Date(c.createdAt).toLocaleDateString(lang)}
+                        </span>
+                      </div>
                       <p className="post-body">{c.body}</p>
                       {actions("comment", c)}
                     </article>
@@ -596,11 +641,17 @@ export default function Community({
                     ) : (
                       feed.items.map((p) => (
                         <article className="panel post-card" key={p.id}>
-                          <p className="post-meta">
-                            {p.author} ·{" "}
-                            {new Date(p.createdAt).toLocaleDateString(lang)} ·{" "}
-                            {p.language.toUpperCase()}
-                          </p>
+                          <div className="post-meta post-meta-row">
+                            <AuthorTag
+                              name={p.author}
+                              countryCode={p.authorCountry}
+                              lang={lang}
+                            />
+                            <span>
+                              · {new Date(p.createdAt).toLocaleDateString(lang)} ·{" "}
+                              {p.language.toUpperCase()}
+                            </span>
+                          </div>
                           <h3>
                             <button
                               className="post-title"
@@ -619,9 +670,15 @@ export default function Community({
                     <button
                       className="small-button"
                       disabled={page === 0}
-                      onClick={() => setPage((p) => p - 1)}
+                      onClick={() => {
+                        setPage((p) => p - 1);
+                        contentTopRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                      }}
                     >
-                      {t.previous}
+                      ← {t.previous}
                     </button>
                     <span>
                       {page + 1} · {feed.total} {t.total}
@@ -629,9 +686,15 @@ export default function Community({
                     <button
                       className="small-button"
                       disabled={(page + 1) * 20 >= feed.total}
-                      onClick={() => setPage((p) => p + 1)}
+                      onClick={() => {
+                        setPage((p) => p + 1);
+                        contentTopRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                      }}
                     >
-                      {t.next}
+                      {t.next} →
                     </button>
                   </div>
                 </>

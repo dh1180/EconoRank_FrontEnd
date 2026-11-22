@@ -99,10 +99,7 @@ export default async function CountryPage({ params }: Props) {
           >
             {t.compare} →
           </Link>
-          <Link
-            className="button button-glass"
-            href={`/${lang}/community?space=country-${code}`}
-          >
+          <Link className="button button-glass" href={`/${lang}/community`}>
             {t.community}
           </Link>
         </div>

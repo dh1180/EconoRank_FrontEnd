@@ -3185,3 +3185,62 @@ html[data-theme="dark"] .exchange-pill.active small {
 .selection-fields .year-select-wrap select {
   width: 100%;
 }
+
+
+/* Community Country Badge & No-VPN Notice */
+.vpn-notice {
+  background: var(--gold-soft);
+  border: 1px solid rgba(180, 120, 28, 0.32);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.vpn-notice strong {
+  display: block;
+  color: var(--gold);
+  font-size: 0.84rem;
+  margin-bottom: 4px;
+}
+
+.vpn-notice p {
+  margin: 0;
+}
+
+.member-country-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.post-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.author-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.author-country-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
