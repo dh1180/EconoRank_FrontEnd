@@ -3420,3 +3420,27 @@ html[data-theme="dark"] .exchange-pill.active small {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Guest Anonymous Fields & Badge */
+.guest-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.anon-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+@media (max-width: 680px) {
+  .guest-fields {
+    grid-template-columns: 1fr;
+  }
+}

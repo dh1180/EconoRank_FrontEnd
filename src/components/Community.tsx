@@ -17,8 +17,9 @@ type Post = {
   body: string;
   language: string;
   author: string;
-  authorId: string;
+  authorId: string | null;
   authorCountry?: string | null;
+  anonymous?: boolean;
   createdAt: string;
   spaceId: string;
 };
@@ -26,8 +27,9 @@ type Comment = {
   id: string;
   body: string;
   author: string;
-  authorId: string;
+  authorId: string | null;
   authorCountry?: string | null;
+  anonymous?: boolean;
   createdAt: string;
 };
 type Feed = { items: Post[]; total: number };
@@ -80,10 +82,12 @@ async function mutate<T>(
 function AuthorTag({
   name,
   countryCode,
+  anonymous,
   lang,
 }: {
   name: string;
   countryCode?: string | null;
+  anonymous?: boolean;
   lang: Locale;
 }) {
   return (
@@ -94,6 +98,9 @@ function AuthorTag({
         <span className="author-country-tag">
           {countryName(countryCode, countryCode, lang)}
         </span>
+      )}
+      {anonymous && (
+        <span className="anon-tag">{lang === "ko" ? "익명" : "Guest"}</span>
       )}
     </span>
   );
@@ -134,6 +141,10 @@ export default function Community({
     [revision, setRevision] = useState(0),
     [report, setReport] = useState<{
       targetType: string;
+      targetId: string;
+    } | null>(null),
+    [guestDelete, setGuestDelete] = useState<{
+      targetType: "post" | "comment";
       targetId: string;
     } | null>(null);
   const [blocks, setBlocks] = useState<{ id: string; displayName: string }[]>(
@@ -245,6 +256,29 @@ export default function Community({
   }
 
   function actions(type: "post" | "comment", item: Post | Comment) {
+    if (item.anonymous) {
+      return (
+        <div className="post-actions">
+          <button
+            disabled={busy}
+            onClick={() =>
+              setGuestDelete({ targetType: type, targetId: item.id })
+            }
+          >
+            {t.delete}
+          </button>
+          {member && (
+            <button
+              onClick={() =>
+                setReport({ targetType: type, targetId: item.id })
+              }
+            >
+              {t.report}
+            </button>
+          )}
+        </div>
+      );
+    }
     return (
       member && (
         <div className="post-actions">
@@ -272,17 +306,19 @@ export default function Community({
               >
                 {t.report}
               </button>
-              <button
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    await mutate(`/blocks/${item.authorId}`, "POST");
-                    openPost(null);
-                  })
-                }
-              >
-                {t.block}
-              </button>
+              {item.authorId && (
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    run(async () => {
+                      await mutate(`/blocks/${item.authorId}`, "POST");
+                      openPost(null);
+                    })
+                  }
+                >
+                  {t.block}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -485,6 +521,51 @@ export default function Community({
             </div>
           </form>
         )}
+        {guestDelete && (
+          <form
+            className="panel editor"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const guestPassword = new FormData(e.currentTarget).get(
+                "guestPassword",
+              );
+              const { targetType, targetId } = guestDelete;
+              run(async () => {
+                await mutate(
+                  `/guest/${targetType === "post" ? "posts" : "comments"}/${targetId}/delete`,
+                  "POST",
+                  { guestPassword },
+                );
+                setGuestDelete(null);
+                if (targetType === "post") openPost(null);
+              });
+            }}
+          >
+            <h2>{lang === "ko" ? "익명 글·댓글 삭제" : "Delete anonymous item"}</h2>
+            <label>
+              {lang === "ko" ? "작성 시 입력한 삭제 비밀번호" : "Deletion password"}
+              <input
+                type="password"
+                name="guestPassword"
+                minLength={4}
+                maxLength={32}
+                required
+              />
+            </label>
+            <div className="hero-actions">
+              <button className="button" disabled={busy}>
+                {t.delete}
+              </button>
+              <button
+                type="button"
+                className="small-button"
+                onClick={() => setGuestDelete(null)}
+              >
+                {t.cancel}
+              </button>
+            </div>
+          </form>
+        )}
         {admin && member?.role === "ADMIN" ? (
           <section className="panel editor">
             <h2>{t.admin}</h2>
@@ -539,39 +620,67 @@ export default function Community({
                   {t.back}
                 </button>
               ) : (
-                member && (
-                  <button
-                    className="button"
-                    onClick={() => setWriting(!writing)}
-                  >
-                    {t.write}
-                  </button>
-                )
+                <button
+                  className="button"
+                  onClick={() => setWriting(!writing)}
+                >
+                  {t.write}
+                </button>
               )}
             </div>
-            {writing && !selected && member && (
+            {writing && !selected && (
               <form
                 className="panel editor"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const data = new FormData(e.currentTarget);
                   run(async () => {
-                    const created = await mutate<{ id: string }>(
-                      "/posts",
-                      "POST",
-                      {
-                        spaceId: "global",
-                        title: data.get("title"),
-                        body: draftBody,
-                        language: lang,
-                      },
-                    );
+                    const created = member
+                      ? await mutate<{ id: string }>("/posts", "POST", {
+                          spaceId: "global",
+                          title: data.get("title"),
+                          body: draftBody,
+                          language: lang,
+                        })
+                      : await mutate<{ id: string }>("/guest/posts", "POST", {
+                          title: data.get("title"),
+                          body: draftBody,
+                          language: lang,
+                          guestName: data.get("guestName") || "",
+                          guestPassword: data.get("guestPassword"),
+                        });
                     setDraftBody("");
                     setWriting(false);
                     openPost(created.id);
                   });
                 }}
               >
+                {!member && (
+                  <div className="guest-fields">
+                    <label>
+                      {lang === "ko"
+                        ? "닉네임 (비워두면 접속 국가별 기본 익명)"
+                        : "Nickname (blank = country default e.g. ㅇㅇ / Anon)"}
+                      <input
+                        name="guestName"
+                        maxLength={40}
+                        placeholder={lang === "ko" ? "ㅇㅇ" : "Anon"}
+                      />
+                    </label>
+                    <label>
+                      {lang === "ko"
+                        ? "삭제 비밀번호 (4~32자)"
+                        : "Deletion password (4–32 chars)"}
+                      <input
+                        type="password"
+                        name="guestPassword"
+                        minLength={4}
+                        maxLength={32}
+                        required
+                      />
+                    </label>
+                  </div>
+                )}
                 <label>
                   {t.title}
                   <input name="title" maxLength={160} required />
@@ -609,6 +718,7 @@ export default function Community({
                     <AuthorTag
                       name={thread.post.author}
                       countryCode={thread.post.authorCountry}
+                      anonymous={thread.post.anonymous}
                       lang={lang}
                     />
                     <span>
@@ -627,6 +737,7 @@ export default function Community({
                         <AuthorTag
                           name={c.author}
                           countryCode={c.authorCountry}
+                          anonymous={c.anonymous}
                           lang={lang}
                         />
                         <span>
@@ -638,44 +749,83 @@ export default function Community({
                     </article>
                   ))}
                   <p className="muted">{t.commentsLimit}</p>
-                  {member && (
-                    <form
-                      className="editor"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        run(async () => {
+                  <form
+                    className="editor"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.currentTarget;
+                      const data = new FormData(form);
+                      run(async () => {
+                        if (member) {
                           await mutate(`/posts/${selected}/comments`, "POST", {
                             body: replyBody,
                           });
-                          setReplyBody("");
-                        });
-                      }}
-                    >
-                      <StatPicker
-                        lang={lang}
-                        onInsert={(token) =>
-                          setReplyBody((prev) =>
-                            prev
-                              ? `${prev.trimEnd()}\n${token}\n`
-                              : `${token}\n`,
-                          )
+                        } else {
+                          await mutate(
+                            `/guest/posts/${selected}/comments`,
+                            "POST",
+                            {
+                              body: replyBody,
+                              guestName: data.get("guestName") || "",
+                              guestPassword: data.get("guestPassword"),
+                            },
+                          );
                         }
+                        setReplyBody("");
+                        form.reset();
+                      });
+                    }}
+                  >
+                    {!member && (
+                      <div className="guest-fields">
+                        <label>
+                          {lang === "ko"
+                            ? "닉네임 (비워두면 기본 익명)"
+                            : "Nickname (optional)"}
+                          <input
+                            name="guestName"
+                            maxLength={40}
+                            placeholder={lang === "ko" ? "ㅇㅇ" : "Anon"}
+                          />
+                        </label>
+                        <label>
+                          {lang === "ko"
+                            ? "삭제 비밀번호 (4~32자)"
+                            : "Deletion password (4–32)"}
+                          <input
+                            type="password"
+                            name="guestPassword"
+                            minLength={4}
+                            maxLength={32}
+                            required
+                          />
+                        </label>
+                      </div>
+                    )}
+                    <StatPicker
+                      lang={lang}
+                      onInsert={(token) =>
+                        setReplyBody((prev) =>
+                          prev
+                            ? `${prev.trimEnd()}\n${token}\n`
+                            : `${token}\n`,
+                        )
+                      }
+                    />
+                    <label>
+                      {t.reply}
+                      <textarea
+                        name="body"
+                        required
+                        maxLength={3000}
+                        value={replyBody}
+                        onChange={(e) => setReplyBody(e.target.value)}
                       />
-                      <label>
-                        {t.reply}
-                        <textarea
-                          name="body"
-                          required
-                          maxLength={3000}
-                          value={replyBody}
-                          onChange={(e) => setReplyBody(e.target.value)}
-                        />
-                      </label>
-                      <button className="button" disabled={busy}>
-                        {t.send}
-                      </button>
-                    </form>
-                  )}
+                    </label>
+                    <button className="button" disabled={busy}>
+                      {t.send}
+                    </button>
+                  </form>
                 </section>
               </>
             ) : (
@@ -691,6 +841,7 @@ export default function Community({
                             <AuthorTag
                               name={p.author}
                               countryCode={p.authorCountry}
+                              anonymous={p.anonymous}
                               lang={lang}
                             />
                             <span>
