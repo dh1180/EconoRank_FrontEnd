@@ -3,10 +3,18 @@ import { notFound } from "next/navigation";
 import { isLocale, dictionary } from "@/lib/i18n";
 import Community from "@/components/Community";
 
-export const metadata: Metadata = {
-  title: "Community",
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const t = dictionary(isLocale(lang) ? lang : "en");
+  return {
+    title: t.community,
+    robots: { index: false, follow: true },
+  };
+}
 
 export default async function CommunityPage({
   params,

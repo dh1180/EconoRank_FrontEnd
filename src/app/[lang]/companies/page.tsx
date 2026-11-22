@@ -49,11 +49,7 @@ export default async function CompaniesPage({
         <div className="hero-copy">
           <div className="hero-badge">
             <span className="sync-dot" aria-hidden="true" />
-            <span>
-              {lang === "ko"
-                ? "실시간 글로벌 시가총액 · 국가 거래소별 순위"
-                : "LIVE GLOBAL MARKET CAP · BY STOCK EXCHANGE"}
-            </span>
+            <span>{t.companiesBadge}</span>
           </div>
           <h1>
             {lang === "ko" ? (
@@ -130,42 +126,30 @@ export default async function CompaniesPage({
           )}
           <div className="snapshot-foot">
             <span>{feed?.source ?? "CompaniesMarketCap"}</span>
-            <a href="#companies">
-              {lang === "ko" ? "전체 기업 보기 ↓" : "All companies ↓"}
-            </a>
+            <a href="#companies">{t.allCompanies} ↓</a>
           </div>
         </div>
       </section>
 
-      <section className="stats" aria-label="Market cap summary">
+      <section className="stats" aria-label={t.marketCap}>
         <div className="stat-card">
-          <span className="stat-label">
-            {lang === "ko" ? "전체 추적 글로벌 상장사" : "Global Listed Companies"}
-          </span>
+          <span className="stat-label">{t.listedCompanies}</span>
           <strong className="stat-value">
             {feed ? feed.total.toLocaleString() : "—"}
           </strong>
           <small className="stat-sub">
-            {lang === "ko"
-              ? `${feed?.exchanges?.length ?? 0}개 국가 거래소별 Top 100 지원`
-              : `Top 100 across ${feed?.exchanges?.length ?? 0} national exchanges`}
+            {t.byExchange} ({feed?.exchanges?.length ?? 0})
           </small>
         </div>
         <div className="stat-card">
-          <span className="stat-label">
-            {lang === "ko" ? "글로벌 TOP 100 합산 시총" : "Top 100 Combined Cap"}
-          </span>
+          <span className="stat-label">{t.top100Cap}</span>
           <strong className="stat-value">
             {top100Cap > 0 ? amount(top100Cap, lang) : "—"}
           </strong>
-          <small className="stat-sub">
-            {lang === "ko" ? "미국 달러 (US$) 기준" : "Current US dollars (US$)"}
-          </small>
+          <small className="stat-sub">US$</small>
         </div>
         <div className="stat-card">
-          <span className="stat-label">
-            {lang === "ko" ? "글로벌 1위 기업" : "#1 Global Company"}
-          </span>
+          <span className="stat-label">{t.topCompany}</span>
           <strong className="stat-value source-stat">
             {feed?.items[0] ? (
               <>

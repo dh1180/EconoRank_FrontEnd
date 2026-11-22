@@ -2146,11 +2146,11 @@ td.numeric .value-status {
   }
 
   .header nav a {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-width: 0;
     text-align: center;
-    padding: 7px 4px;
-    font-size: 0.74rem;
+    padding: 7px 5px;
+    font-size: 0.72rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

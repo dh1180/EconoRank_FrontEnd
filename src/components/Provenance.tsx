@@ -26,6 +26,7 @@ export default function Provenance({
   lang: string;
   checkedAt?: string;
 }) {
+  const t = dictionary(isLocale(lang) ? lang : "en");
   const releases = [
     ...new Map(
       items.map((item) => [item.provider + "|" + item.publishedAt, item]),
@@ -36,20 +37,12 @@ export default function Provenance({
     <aside className="provenance">
       <div className="provenance-head">
         <div>
-          <p className="eyebrow">
-            {lang === "ko" ? "데이터 출처와 갱신" : "SOURCES & METHODOLOGY"}
-          </p>
-          <p className="provenance-desc">
-            {lang === "ko"
-              ? "같은 기준연도·출처로 비교합니다. 추정·전망은 발표 이후 수정될 수 있습니다."
-              : "Comparisons use a common reference year and source. Estimates and forecasts may be revised."}
-          </p>
+          <p className="eyebrow">{t.sourcesHeading}</p>
+          <p className="provenance-desc">{t.definition}</p>
         </div>
         <div className="sync-pill">
           <span className="sync-dot" aria-hidden="true" />
-          <span>
-            {lang === "ko" ? "매일 1회 자동 확인" : "Daily auto-sync"}
-          </span>
+          <span>{t.dailySync}</span>
         </div>
       </div>
 
@@ -71,8 +64,7 @@ export default function Provenance({
               </div>
               <span className="source-edition">{editionName(item, lang)}</span>
               <small>
-                {lang === "ko" ? "수집" : "Retrieved"}{" "}
-                {item.retrievedAt.slice(0, 10)}
+                {t.retrieved} {item.retrievedAt.slice(0, 10)}
               </small>
             </a>
           ))}
@@ -81,14 +73,11 @@ export default function Provenance({
 
       <div className="provenance-notes">
         <p className="refresh-note">
-          {lang === "ko"
-            ? "출처: IMF World Economic Outlook (WEO) · 명목 GDP·1인당 GDP: 당해 미국 달러(US$) · PPP: 당해 국제달러(Int$) · 결측값은 추정하지 않습니다."
-            : "Source: IMF World Economic Outlook (WEO) · Nominal GDP & GDP per capita: current US dollars · PPP: current international dollars · Missing values are not estimated."}
+          {t.worldbank} · {t.exportNote}
         </p>
         {checkedAt && (
           <p className="refresh-note mono">
-            {lang === "ko" ? "최근 서버 확인" : "Last verified"}{" "}
-            {checkedAt.slice(0, 16).replace("T", " ")} UTC
+            {t.lastUpdated} {checkedAt.slice(0, 16).replace("T", " ")} UTC
           </p>
         )}
       </div>

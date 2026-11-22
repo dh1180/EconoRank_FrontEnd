@@ -409,12 +409,8 @@ export default function CompaniesExplorer({
                 onClick={() => setShowAllExchanges((v) => !v)}
               >
                 {showAllExchanges
-                  ? lang === "ko"
-                    ? "접기 ▲"
-                    : "Show less ▲"
-                  : lang === "ko"
-                    ? `+${exchanges.length - 14}개 거래소 더보기 ▼`
-                    : `+${exchanges.length - 14} more exchanges ▼`}
+                  ? `${t.showLess} ▲`
+                  : `+${exchanges.length - 14} ${t.moreExchanges} ▼`}
               </button>
             )}
           </div>
@@ -425,13 +421,10 @@ export default function CompaniesExplorer({
         <div className="region-share-box">
           <div className="region-share-head">
             <span className="region-share-title">
-              {lang === "ko"
-                ? `글로벌 상위 ${items.length}개 기업 국가별 시총 비중`
-                : `Top ${items.length} market cap share by country`}
+              {t.shareByCountry} (Top {items.length})
             </span>
             <span className="region-share-total mono">
-              {lang === "ko" ? "합산 시총" : "Combined"}:{" "}
-              {amount(totalCap, lang)} US$
+              {t.combined}: {amount(totalCap, lang)} US$
             </span>
           </div>
           <div
@@ -533,13 +526,7 @@ export default function CompaniesExplorer({
             disabled={loadingExchange}
             onClick={() => selectScope(regionFilter, exchangeFilter, true)}
           >
-            {loadingExchange
-              ? lang === "ko"
-                ? "불러오는 중…"
-                : "Loading…"
-              : lang === "ko"
-                ? "↻ 시세 확인"
-                : "↻ Refresh"}
+            {loadingExchange ? t.loading : `↻ ${t.refresh}`}
           </button>
           <button
             type="button"
@@ -698,22 +685,15 @@ export default function CompaniesExplorer({
       <aside className="provenance">
         <div className="provenance-head">
           <div>
-            <p className="eyebrow">
-              {lang === "ko" ? "실시간 시장 데이터 출처" : "LIVE MARKET DATA SOURCE"}
-            </p>
+            <p className="eyebrow">{t.sourcesHeading}</p>
             <p className="provenance-desc">
-              {lang === "ko"
-                ? `전 세계 ${feed.total.toLocaleString()}개 상장 기업·${exchanges.length}개 국가 거래소 데이터를 ${feed.refreshIntervalMinutes}분 TTL 캐시로 요청 시에만 효율적으로 갱신합니다.`
-                : `${feed.total.toLocaleString()} global public companies across ${exchanges.length} stock exchanges, refreshed lazily on demand with a ${feed.refreshIntervalMinutes}-minute TTL cache.`}
+              {feed.total.toLocaleString()} · {exchanges.length} exchanges ·{" "}
+              {feed.refreshIntervalMinutes}m TTL
             </p>
           </div>
           <div className="sync-pill">
             <span className="sync-dot" aria-hidden="true" />
-            <span>
-              {lang === "ko"
-                ? `${feed.refreshIntervalMinutes}분 TTL 캐시 · 요청 시 갱신`
-                : `${feed.refreshIntervalMinutes}m on-demand cache`}
-            </span>
+            <span>{feed.refreshIntervalMinutes}m TTL</span>
           </div>
         </div>
         <div className="provenance-notes" style={{ marginTop: 12 }}>
@@ -727,8 +707,7 @@ export default function CompaniesExplorer({
             {feed.source} ↗
           </a>
           <p className="refresh-note mono">
-            {lang === "ko" ? "최근 갱신" : "Last updated"}{" "}
-            {feed.updatedAt.slice(0, 19).replace("T", " ")} UTC
+            {t.lastUpdated} {feed.updatedAt.slice(0, 19).replace("T", " ")} UTC
           </p>
         </div>
       </aside>

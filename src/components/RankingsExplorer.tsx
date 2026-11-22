@@ -138,12 +138,9 @@ export default function RankingsExplorer({
       {metric !== "gdppc" && regionShares.length > 0 && worldTotal > 0 && (
         <div className="region-share-box">
           <div className="region-share-head">
-            <span className="region-share-title">
-              {lang === "ko" ? "권역별 세계 비중" : "Regional share of global total"}
-            </span>
+            <span className="region-share-title">{t.regionalShare}</span>
             <span className="region-share-total mono">
-              {lang === "ko" ? "합계" : "Total"}:{" "}
-              {metricAmount(worldTotal, metric, lang)} {unitLabel}
+              {t.combined}: {metricAmount(worldTotal, metric, lang)} {unitLabel}
             </span>
           </div>
           <div className="region-stacked-bar" role="group" aria-label="Regional breakdown">
@@ -450,11 +447,7 @@ export default function RankingsExplorer({
                   {t.apply} ({compareList.length}) →
                 </Link>
               ) : (
-                <span className="dock-hint">
-                  {lang === "ko"
-                    ? "1개국 더 선택하세요"
-                    : "Pick 1 more country"}
-                </span>
+                <span className="dock-hint">{t.pickOneMore}</span>
               )}
             </div>
           </div>
