@@ -258,13 +258,7 @@ export function StatPicker({
         className="small-button stat-picker-toggle"
         onClick={() => setOpen((v) => !v)}
       >
-        {open
-          ? lang === "ko"
-            ? "지표 첨부 닫기 ▲"
-            : "Close stat picker ▲"
-          : lang === "ko"
-            ? "+ 사이트 지표 카드 첨부 (GDP · 기업 시총)"
-            : "+ Attach live stat card (GDP · Market Cap)"}
+        {open ? t.closeStatPicker : t.attachStat}
       </button>
 
       {open && (
@@ -275,14 +269,14 @@ export function StatPicker({
               className={tab === "country" ? "active" : ""}
               onClick={() => setTab("country")}
             >
-              {lang === "ko" ? "국가 경제 지표 (IMF)" : "Country Indicator (IMF)"}
+              {t.rankings} (IMF)
             </button>
             <button
               type="button"
               className={tab === "company" ? "active" : ""}
               onClick={() => setTab("company")}
             >
-              {lang === "ko" ? "기업 시가총액 (실시간)" : "Company Market Cap"}
+              {t.companies} · {t.marketCap}
             </button>
           </div>
 
@@ -333,7 +327,7 @@ export function StatPicker({
                   setOpen(false);
                 }}
               >
-                {lang === "ko" ? "본문에 삽입" : "Insert card"}
+                {t.insertCard}
               </button>
             </div>
           ) : (
@@ -342,11 +336,7 @@ export function StatPicker({
                 type="search"
                 value={companyQuery}
                 onChange={(e) => setCompanyQuery(e.target.value)}
-                placeholder={
-                  lang === "ko"
-                    ? "기업명 또는 티커 검색 (예: Apple, Samsung, NVDA)..."
-                    : "Search company or ticker (e.g. Apple, NVDA)..."
-                }
+                placeholder={t.searchCompanies}
               />
               <div className="stat-company-results">
                 {filteredCompanies.map((c) => (

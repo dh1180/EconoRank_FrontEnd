@@ -112,22 +112,27 @@ const EXCHANGE_FLAGS: Record<string, string> = {
   BYMA: "ARG",
 };
 
-const REGION_LABELS: Record<string, { ko: string; en: string }> = {
-  NORTH_AMERICA: { ko: "북미", en: "North America" },
-  ASIA: { ko: "아시아", en: "Asia" },
-  EUROPE: { ko: "유럽", en: "Europe" },
-  MIDDLE_EAST: { ko: "중동", en: "Middle East" },
-  OCEANIA: { ko: "오세아니아", en: "Oceania" },
-  LATIN_AMERICA: { ko: "중남미", en: "Latin America" },
-  AFRICA: { ko: "아프리카", en: "Africa" },
-};
-
 const PAGE_SIZE = 25;
 
-function regionLabel(code: string, lang: string) {
-  const entry = REGION_LABELS[code];
-  if (!entry) return code;
-  return lang === "ko" ? entry.ko : entry.en;
+function regionLabel(code: string, t: ReturnType<typeof dictionary>) {
+  switch (code) {
+    case "NORTH_AMERICA":
+      return t.regionNA;
+    case "ASIA":
+      return t.regionAS;
+    case "EUROPE":
+      return t.regionEU;
+    case "MIDDLE_EAST":
+      return t.regionME;
+    case "OCEANIA":
+      return t.regionOC;
+    case "LATIN_AMERICA":
+      return t.regionLA;
+    case "AFRICA":
+      return t.regionAF;
+    default:
+      return code;
+  }
 }
 
 function exchangeLabel(code: string, lang: string) {
@@ -323,14 +328,10 @@ export default function CompaniesExplorer({
           }
         >
           <div className="exchange-bar-head">
-            <span className="region-share-title">
-              {lang === "ko"
-                ? "권역별 시가총액 순위 (북미 · 아시아 · 유럽 등 각 Top 100)"
-                : "Rankings by Region (North America · Asia · Europe · Top 100 each)"}
-            </span>
+            <span className="region-share-title">{t.byRegion}</span>
             {regionFilter !== "ALL" && (
               <span className="exchange-active-note mono">
-                {regionLabel(regionFilter, lang)} · Top {items.length} /{" "}
+                {regionLabel(regionFilter, t)} · Top {items.length} /{" "}
                 {feed.exchangeTotal ?? items.length}
               </span>
             )}
@@ -341,7 +342,7 @@ export default function CompaniesExplorer({
               className={`exchange-pill ${regionFilter === "ALL" && exchangeFilter === "ALL" ? "active" : ""}`}
               onClick={() => selectScope("ALL", "ALL")}
             >
-              <span>{lang === "ko" ? "전체 글로벌 Top 250" : "Global Top 250"}</span>
+              <span>{t.globalTop250}</span>
               <small className="mono">{feed.total.toLocaleString()}</small>
             </button>
             {regions.map((r) => (
@@ -353,7 +354,7 @@ export default function CompaniesExplorer({
                   selectScope(regionFilter === r.code ? "ALL" : r.code, "ALL")
                 }
               >
-                <span>{regionLabel(r.code, lang)}</span>
+                <span>{regionLabel(r.code, t)}</span>
                 <small className="mono">{r.count.toLocaleString()}</small>
               </button>
             ))}
@@ -371,9 +372,7 @@ export default function CompaniesExplorer({
         >
           <div className="exchange-bar-head">
             <span className="region-share-title">
-              {lang === "ko"
-                ? `국가 거래소별 주식 순위 (${exchanges.length}개 거래소 · 각 Top 100)`
-                : `Stock Rankings by Exchange (${exchanges.length} exchanges · Top 100 each)`}
+              {t.byExchange} ({exchanges.length})
             </span>
             {exchangeFilter !== "ALL" && (
               <span className="exchange-active-note mono">
@@ -468,7 +467,7 @@ export default function CompaniesExplorer({
                 setPage(0);
               }}
             >
-              {lang === "ko" ? "전체" : "All"} ({items.length})
+              {t.all} ({items.length})
             </button>
             {topCountries.map((seg, idx) => {
               const pct = (seg.cap / totalCap) * 100;
@@ -521,11 +520,7 @@ export default function CompaniesExplorer({
               setQuery(e.target.value);
               setPage(0);
             }}
-            placeholder={
-              lang === "ko"
-                ? "기업명, 티커(AAPL, 005930.KS), 거래소 또는 국가 검색..."
-                : "Search company, ticker (AAPL, 005930.KS), exchange or country..."
-            }
+            placeholder={t.searchCompanies}
           />
         </div>
         <div className="explorer-tools-right">
@@ -577,20 +572,15 @@ export default function CompaniesExplorer({
             <thead>
               <tr>
                 <th scope="col">{t.rank}</th>
-                <th scope="col">
-                  {lang === "ko"
-                    ? "기업 / 티커 · 거래소"
-                    : "Company / Ticker · Exchange"}
-                </th>
+                <th scope="col">{t.companyTicker}</th>
                 <th scope="col" className="country-col">
                   {t.country}
                 </th>
                 <th scope="col" className="numeric">
-                  {lang === "ko" ? "시가총액" : "Market Cap"}{" "}
-                  <span className="muted">(US$)</span>
+                  {t.marketCap} <span className="muted">(US$)</span>
                 </th>
                 <th scope="col" className="numeric price-col">
-                  {lang === "ko" ? "주가" : "Price"}
+                  {t.price}
                 </th>
                 <th scope="col" className="bar-column">
                   <span className="sr-only">Relative size</span>

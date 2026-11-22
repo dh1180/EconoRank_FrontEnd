@@ -178,7 +178,7 @@ export default function RankingsExplorer({
                 setPage(0);
               }}
             >
-              {lang === "ko" ? "전체" : "All"} ({items.length})
+              {t.all} ({items.length})
             </button>
             {regionShares.map((seg) => {
               const pct = (seg.total / worldTotal) * 100;
@@ -230,11 +230,7 @@ export default function RankingsExplorer({
               setQuery(e.target.value);
               setPage(0);
             }}
-            placeholder={
-              lang === "ko"
-                ? "국가명 또는 ISO 코드로 즉시 검색..."
-                : "Instant search by country or ISO code..."
-            }
+            placeholder={t.searchCountries}
           />
         </div>
         <div className="explorer-tools-right">
@@ -289,13 +285,7 @@ export default function RankingsExplorer({
                   {t.value} <span className="muted">({unitLabel})</span>
                 </th>
                 <th scope="col" className="numeric share-col">
-                  {metric === "gdppc"
-                    ? lang === "ko"
-                      ? "세계 평균 대비"
-                      : "vs Avg"
-                    : lang === "ko"
-                      ? "세계 비중"
-                      : "Share"}
+                  {metric === "gdppc" ? t.vsAvg : t.share}
                 </th>
                 <th scope="col" className="bar-column">
                   <span className="sr-only">Relative value</span>

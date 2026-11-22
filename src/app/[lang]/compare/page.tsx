@@ -97,9 +97,7 @@ export default async function Compare({
         <h1>{t.compareTitle}</h1>
         <p className="lead">{t.compareIntro}</p>
         <div className="preset-bar" aria-label={lang === "ko" ? "빠른 비교 프리셋" : "Quick comparison presets"}>
-          <span className="preset-label">
-            {lang === "ko" ? "빠른 프리셋" : "Quick presets"}
-          </span>
+          <span className="preset-label">{t.quickPresets}</span>
           {presets.map((p) => {
             const qs = p.codes.map((c) => `country=${c}`).join("&");
             const active =

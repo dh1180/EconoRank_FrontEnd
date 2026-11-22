@@ -736,6 +736,7 @@ button {
   font-weight: 600;
   color: #8fa6a2;
   width: 22px;
+  flex-shrink: 0;
   text-align: center;
   border-radius: 5px;
   padding: 1px 0;
@@ -760,6 +761,8 @@ button {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.72rem;
   color: #8fa6a2;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .snapshot-name {
@@ -1963,12 +1966,25 @@ td.numeric .value-status {
 
 .post-card {
   padding: 22px 26px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.post-card-clickable {
+  cursor: pointer;
 }
 
 .post-card:hover {
   border-color: var(--line-strong);
   box-shadow: var(--shadow-md);
+}
+
+.post-card-clickable:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.post-card-clickable:hover .post-title {
+  color: var(--accent);
 }
 
 .post-card h3 {
@@ -2120,13 +2136,24 @@ td.numeric .value-status {
     order: 3;
     width: 100%;
     justify-content: space-between;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 2px;
+  }
+
+  .header nav::-webkit-scrollbar {
+    display: none;
   }
 
   .header nav a {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     text-align: center;
-    padding: 7px 10px;
-    font-size: 0.85rem;
+    padding: 7px 4px;
+    font-size: 0.74rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .lang-switcher {
@@ -2984,6 +3011,102 @@ html[data-theme="dark"] .preset-pill.active {
   .country-col,
   .price-col {
     display: none;
+  }
+
+  #companies th,
+  #companies td {
+    padding: 12px 10px;
+  }
+
+  .company-name {
+    font-size: 0.88rem;
+  }
+
+  .company-row-main {
+    gap: 8px;
+  }
+
+  .tabs-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs a,
+  .tabs .tab-btn {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    padding: 7px 6px;
+    font-size: 0.76rem;
+  }
+
+  .trend-svg-wrap {
+    padding: 4px 10px 14px;
+  }
+
+  .trend-svg {
+    min-width: 0;
+  }
+
+  .explorer-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .explorer-search-wrap {
+    max-width: none;
+    width: 100%;
+  }
+
+  .explorer-tools-right {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .post-card {
+    padding: 18px 18px;
+  }
+
+  .account-panel {
+    padding: 16px;
+  }
+
+  .stat-embed-card {
+    padding: 12px 14px;
+  }
+
+  .stat-embed-right {
+    align-items: flex-start;
+  }
+
+  .compare-dock {
+    padding: 0 10px;
+    bottom: 12px;
+  }
+
+  .compare-dock-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .compare-dock-actions {
+    justify-content: space-between;
   }
 }
 

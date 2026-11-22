@@ -95,9 +95,7 @@ export default function CountryTrendChart({
     <section className="panel trend-panel">
       <div className="section-head">
         <div>
-          <p className="eyebrow">
-            {lang === "ko" ? "장기 추이 · IMF 전망 포함" : "TRAJECTORY & IMF OUTLOOK"}
-          </p>
+          <p className="eyebrow">{t.trajectory}</p>
           <h2>
             {t[metric]}{" "}
             <span className="trend-range">

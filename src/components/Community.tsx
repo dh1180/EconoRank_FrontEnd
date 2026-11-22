@@ -99,9 +99,7 @@ function AuthorTag({
           {countryName(countryCode, countryCode, lang)}
         </span>
       )}
-      {anonymous && (
-        <span className="anon-tag">{lang === "ko" ? "익명" : "Guest"}</span>
-      )}
+      {anonymous && <span className="anon-tag">{dictionary(lang).anonBadge}</span>}
     </span>
   );
 }
@@ -154,14 +152,8 @@ export default function Community({
     [admin, setAdmin] = useState(false);
   const contentTopRef = useRef<HTMLElement>(null);
 
-  const vpnNoticeTitle =
-    lang === "ko"
-      ? "회원가입 시 국가 영구 고정 · VPN 사용 금지"
-      : "Country Locked at Sign-Up · No VPN";
-  const vpnNoticeBody =
-    lang === "ko"
-      ? "회원가입 시 접속한 국가에 따라 회원님의 국가와 국기가 영구 고정됩니다(가입 후 변경 불가). 정확한 국가 표시를 위해 VPN·프록시를 끄고 회원가입해 주세요."
-      : "Your country and flag are permanently locked based on your sign-up location (cannot be changed afterward). Please disable any VPN or proxy before registering.";
+  const vpnNoticeTitle = t.vpnTitle;
+  const vpnNoticeBody = t.vpnBody;
 
   useEffect(() => {
     read<Member>("/auth/me")
@@ -268,7 +260,7 @@ export default function Community({
   function actions(type: "post" | "comment", item: Post | Comment) {
     if (item.anonymous) {
       return (
-        <div className="post-actions">
+        <div className="post-actions" onClick={(e) => e.stopPropagation()}>
           <button
             disabled={busy}
             onClick={() =>
@@ -291,7 +283,7 @@ export default function Community({
     }
     return (
       member && (
-        <div className="post-actions">
+        <div className="post-actions" onClick={(e) => e.stopPropagation()}>
           {member.id === item.authorId ? (
             <button
               disabled={busy}
@@ -551,9 +543,9 @@ export default function Community({
               });
             }}
           >
-            <h2>{lang === "ko" ? "익명 글·댓글 삭제" : "Delete anonymous item"}</h2>
+            <h2>{t.guestDeleteTitle}</h2>
             <label>
-              {lang === "ko" ? "작성 시 입력한 삭제 비밀번호" : "Deletion password"}
+              {t.guestDeletePrompt}
               <input
                 type="password"
                 name="guestPassword"
@@ -668,19 +660,15 @@ export default function Community({
                 {!member && (
                   <div className="guest-fields">
                     <label>
-                      {lang === "ko"
-                        ? "닉네임 (비워두면 접속 국가별 기본 익명)"
-                        : "Nickname (blank = country default e.g. ㅇㅇ / Anon)"}
+                      {t.guestNick}
                       <input
                         name="guestName"
                         maxLength={40}
-                        placeholder={lang === "ko" ? "ㅇㅇ" : "Anon"}
+                        placeholder={lang === "ko" ? "ㅇㅇ" : lang === "ja" ? "名無し" : lang === "zh" ? "匿名" : "Anon"}
                       />
                     </label>
                     <label>
-                      {lang === "ko"
-                        ? "삭제 비밀번호 (4~32자)"
-                        : "Deletion password (4–32 chars)"}
+                      {t.guestPass}
                       <input
                         type="password"
                         name="guestPassword"
@@ -789,19 +777,15 @@ export default function Community({
                     {!member && (
                       <div className="guest-fields">
                         <label>
-                          {lang === "ko"
-                            ? "닉네임 (비워두면 기본 익명)"
-                            : "Nickname (optional)"}
+                          {t.guestNick}
                           <input
                             name="guestName"
                             maxLength={40}
-                            placeholder={lang === "ko" ? "ㅇㅇ" : "Anon"}
+                            placeholder={lang === "ko" ? "ㅇㅇ" : lang === "ja" ? "名無し" : lang === "zh" ? "匿名" : "Anon"}
                           />
                         </label>
                         <label>
-                          {lang === "ko"
-                            ? "삭제 비밀번호 (4~32자)"
-                            : "Deletion password (4–32)"}
+                          {t.guestPass}
                           <input
                             type="password"
                             name="guestPassword"
@@ -846,7 +830,15 @@ export default function Community({
                       <p className="panel editor">{t.noPosts}</p>
                     ) : (
                       feed.items.map((p) => (
-                        <article className="panel post-card" key={p.id}>
+                        <article
+                          className="panel post-card post-card-clickable"
+                          key={p.id}
+                          onClick={(e) => {
+                            if (window.getSelection()?.toString()) return;
+                            if ((e.target as HTMLElement).closest("button, a")) return;
+                            openPost(p.id);
+                          }}
+                        >
                           <div className="post-meta post-meta-row">
                             <AuthorTag
                               name={p.author}
@@ -861,6 +853,7 @@ export default function Community({
                           </div>
                           <h3>
                             <button
+                              type="button"
                               className="post-title"
                               onClick={() => openPost(p.id)}
                             >

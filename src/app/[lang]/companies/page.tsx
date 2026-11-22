@@ -14,11 +14,9 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
+  const t = dictionary(isLocale(lang) ? lang : "en");
   return {
-    title:
-      lang === "ko"
-        ? "전세계 실시간 기업 시가총액 순위"
-        : "Global live company market cap rankings",
+    title: `${t.companies} · ${t.marketCap}`,
     alternates: {
       canonical: `/${lang}/companies`,
       languages: { en: "/en/companies", ko: "/ko/companies" },
@@ -63,21 +61,19 @@ export default async function CompaniesPage({
                 <span className="headline-line">전 세계 기업 시가총액</span>
                 <span className="headline-line hero-accent">실시간 순위.</span>
               </>
-            ) : (
+            ) : lang === "en" ? (
               <>
                 World’s largest companies,{" "}
                 <em className="hero-serif">ranked live.</em>
               </>
+            ) : (
+              t.companiesHeadline
             )}
           </h1>
-          <p className="lead">
-            {lang === "ko"
-              ? "애플, 마이크로소프트, 엔비디아, 삼성전자 등 전 세계 주요 상장 기업의 시가총액과 주가를 실시간으로 탐색하세요."
-              : "Track real-time market capitalizations and share prices of the world’s largest public companies across every major exchange."}
-          </p>
+          <p className="lead">{t.companiesLead}</p>
           <div className="hero-actions">
             <a className="button button-bright" href="#companies">
-              {lang === "ko" ? "기업 순위 보기" : "Explore companies"}
+              {t.exploreCompanies}
             </a>
             <Link className="button button-glass" href={`/${lang}`}>
               {t.rankings} →
@@ -94,7 +90,7 @@ export default async function CompaniesPage({
               <span className="snapshot-kicker">
                 {lang === "ko" ? "실시간 글로벌 TOP 5" : "LIVE GLOBAL TOP 5"}
               </span>
-              <strong>{lang === "ko" ? "기업 시가총액" : "Market Cap"}</strong>
+              <strong>{t.marketCap}</strong>
             </div>
             <span className="snapshot-pill">LIVE · US$</span>
           </div>
@@ -202,9 +198,7 @@ export default async function CompaniesPage({
         <div className="section-head">
           <div>
             <p className="eyebrow">GLOBAL EQUITY RANKINGS · LIVE</p>
-            <h2>
-              {lang === "ko" ? "실시간 기업 시가총액 순위" : "Live Company Market Cap"}
-            </h2>
+            <h2>{t.companies} · {t.marketCap}</h2>
           </div>
           <span className="unit-badge">LIVE · US$</span>
         </div>

@@ -117,9 +117,7 @@ export default async function Rankings({
         >
           <div className="snapshot-head">
             <div>
-              <span className="snapshot-kicker">
-                {lang === "ko" ? "실시간 리더보드" : "LIVE LEADERBOARD"}
-              </span>
+              <span className="snapshot-kicker">{t.liveLeaderboard}</span>
               <strong>{t[metric]}</strong>
             </div>
             <span className="snapshot-pill">
@@ -167,9 +165,7 @@ export default async function Rankings({
           )}
           <div className="snapshot-foot">
             <span>IMF WEO</span>
-            <a href="#rankings">
-              {lang === "ko" ? "전체 순위 보기 ↓" : "Full rankings ↓"}
-            </a>
+            <a href="#rankings">{t.fullRankings} ↓</a>
           </div>
         </div>
       </section>

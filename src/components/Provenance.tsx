@@ -1,13 +1,9 @@
 import type { Observation } from "@/lib/api";
+import { dictionary, isLocale } from "@/lib/i18n";
 
 export function statusName(status: string, lang: string) {
-  return status === "ACTUAL"
-    ? lang === "ko"
-      ? "실적"
-      : "Actual"
-    : lang === "ko"
-      ? "추정·전망"
-      : "Estimate / forecast";
+  const t = dictionary(isLocale(lang) ? lang : "en");
+  return status === "ACTUAL" ? t.statusActual : t.statusForecast;
 }
 
 export function editionName(
