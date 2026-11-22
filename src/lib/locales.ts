@@ -105,3 +105,92 @@ export function localeMeta(code: string): LocaleMeta {
 export function isRtl(code: string): boolean {
   return Boolean(LOCALE_MAP.get(code)?.rtl);
 }
+
+const COUNTRY_TO_LOCALE: Record<string, Locale> = {
+  KR: "ko", KOR: "ko",
+  JP: "ja", JPN: "ja",
+  CN: "zh", CHN: "zh", TW: "zh", TWN: "zh", HK: "zh", HKG: "zh", MO: "zh", MAC: "zh",
+  ES: "es", ESP: "es", MX: "es", MEX: "es", AR: "es", ARG: "es", CO: "es", COL: "es",
+  CL: "es", CHL: "es", PE: "es", PER: "es", VE: "es", VEN: "es", EC: "es", ECU: "es",
+  UY: "es", URY: "es", PY: "es", PRY: "es", BO: "es", BOL: "es", CR: "es", CRI: "es",
+  PA: "es", PAN: "es", DO: "es", DOM: "es", GT: "es", GTM: "es", HN: "es", HND: "es",
+  FR: "fr", FRA: "fr", BE: "fr", BEL: "fr", MC: "fr", MCO: "fr", LU: "fr", LUX: "fr",
+  SN: "fr", SEN: "fr", CI: "fr", CIV: "fr",
+  DE: "de", DEU: "de", AT: "de", AUT: "de", CH: "de", CHE: "de", LI: "de", LIE: "de",
+  BR: "pt", BRA: "pt", PT: "pt", PRT: "pt", AO: "pt", AGO: "pt", MZ: "pt", MOZ: "pt",
+  RU: "ru", RUS: "ru", BY: "ru", BLR: "ru",
+  SA: "ar", SAU: "ar", AE: "ar", ARE: "ar", EG: "ar", EGY: "ar", QA: "ar", QAT: "ar",
+  KW: "ar", KWT: "ar", OM: "ar", OMN: "ar", BH: "ar", BHR: "ar", JO: "ar", JOR: "ar",
+  IQ: "ar", IRQ: "ar", LB: "ar", LBN: "ar", MA: "ar", MAR: "ar", DZ: "ar", DZA: "ar",
+  TN: "ar", TUN: "ar",
+  IN: "hi", IND: "hi",
+  BD: "bn", BGD: "bn",
+  PK: "ur", PAK: "ur",
+  ID: "id", IDN: "id",
+  VN: "vi", VNM: "vi",
+  TH: "th", THA: "th",
+  TR: "tr", TUR: "tr",
+  IT: "it", ITA: "it",
+  NL: "nl", NLD: "nl",
+  PL: "pl", POL: "pl",
+  UA: "uk", UKR: "uk",
+  SE: "sv", SWE: "sv",
+  NO: "no", NOR: "no",
+  DK: "da", DNK: "da",
+  FI: "fi", FIN: "fi",
+  CZ: "cs", CZE: "cs",
+  HU: "hu", HUN: "hu",
+  RO: "ro", ROU: "ro",
+  GR: "el", GRC: "el",
+  IL: "he", ISR: "he",
+  IR: "fa", IRN: "fa",
+  MY: "ms", MYS: "ms",
+  PH: "tl", PHL: "tl",
+  KE: "sw", KEN: "sw", TZ: "sw", TZA: "sw",
+  SK: "sk", SVK: "sk",
+  BG: "bg", BGR: "bg",
+  HR: "hr", HRV: "hr",
+  RS: "sr", SRB: "sr",
+  SI: "sl", SVN: "sl",
+  LT: "lt", LTU: "lt",
+  LV: "lv", LVA: "lv",
+  EE: "et", EST: "et",
+  IS: "is", ISL: "is",
+  KZ: "kk", KAZ: "kk",
+  UZ: "uz", UZB: "uz",
+  AZ: "az", AZE: "az",
+  GE: "ka", GEO: "ka",
+  AM: "hy", ARM: "hy",
+  MN: "mn", MNG: "mn",
+  MM: "my", MMR: "my",
+  KH: "km", KHM: "km",
+  LA: "lo", LAO: "lo",
+  NP: "ne", NPL: "ne",
+  LK: "si", LKA: "si",
+  ET: "am", ETH: "am",
+  SO: "so", SOM: "so",
+  AL: "sq", ALB: "sq",
+  MK: "mk", MKD: "mk",
+  BA: "bs", BIH: "bs",
+  MT: "mt", MLT: "mt",
+  US: "en", USA: "en", GB: "en", GBR: "en", CA: "en", CAN: "en",
+  AU: "en", AUS: "en", NZ: "en", NZL: "en", IE: "en", IRL: "en",
+  SG: "en", SGP: "en", ZA: "en", ZAF: "en", NG: "en", NGA: "en",
+};
+
+export function countryToLocale(countryCode: string | null | undefined): Locale | null {
+  if (!countryCode) return null;
+  const key = countryCode.trim().toUpperCase();
+  return COUNTRY_TO_LOCALE[key] ?? null;
+}
+
+export function localeFromAcceptLanguage(header: string | null | undefined): Locale | null {
+  if (!header) return null;
+  for (const part of header.split(",")) {
+    const tag = part.split(";")[0]?.trim().toLowerCase();
+    if (!tag) continue;
+    const primary = tag.split("-")[0];
+    if (isLocale(primary)) return primary;
+  }
+  return null;
+}
