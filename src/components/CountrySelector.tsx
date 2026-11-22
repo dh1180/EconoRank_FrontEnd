@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import { countryName } from "@/lib/geography";
+import { COMPARE_COLORS } from "@/lib/palette";
 import type { Country } from "@/lib/api";
 import type { Locale } from "@/lib/i18n";
+
 export default function CountrySelector({
   countries,
   initial,
@@ -14,9 +16,15 @@ export default function CountrySelector({
 }) {
   const [selected, setSelected] = useState(initial),
     [query, setQuery] = useState("");
+  const filtered = countries.filter((c) =>
+    (countryName(c.code, c.name, lang) + " " + c.name + " " + c.code)
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+
   return (
     <>
-      <label htmlFor="country-search">
+      <label htmlFor="country-search" className="field-label">
         {lang === "ko" ? "국가 검색" : "Find a country"}
       </label>
       <input
@@ -25,15 +33,16 @@ export default function CountrySelector({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={
-          lang === "ko" ? "국가명 또는 코드" : "Country name or code"
+          lang === "ko" ? "국가명 또는 코드 (예: 대한, USA)" : "Name or ISO code (e.g. Korea, USA)"
         }
       />
-      <p className="muted" aria-live="polite">
-        {selected.length} / 5 {lang === "ko" ? "선택" : "selected"}
+      <p className="selection-counter muted" aria-live="polite">
+        <strong>{selected.length}</strong> / 5 {lang === "ko" ? "선택됨" : "selected"}
       </p>
       <div className="selected-countries">
-        {selected.map((code) => {
-          const c = countries.find((c) => c.code === code);
+        {selected.map((code, idx) => {
+          const c = countries.find((item) => item.code === code);
+          const dotColor = COMPARE_COLORS[idx % COMPARE_COLORS.length];
           return (
             <button
               key={code}
@@ -43,25 +52,26 @@ export default function CountrySelector({
                 setSelected((s) => s.filter((item) => item !== code))
               }
             >
-              {countryName(code, c?.name || code, lang)}{" "}
+              <i
+                className="chip-dot"
+                style={{ background: dotColor }}
+                aria-hidden="true"
+              />
+              {countryName(code, c?.name || code, lang)}
               <span aria-hidden="true">×</span>
             </button>
           );
         })}
       </div>
       <div className="country-options">
-        {countries
-          .filter((c) =>
-            (countryName(c.code, c.name, lang) + " " + c.name + " " + c.code)
-              .toLowerCase()
-              .includes(query.toLowerCase()),
-          )
-          .map((c) => (
-            <label key={c.code}>
+        {filtered.map((c) => {
+          const isChecked = selected.includes(c.code);
+          return (
+            <label key={c.code} className={isChecked ? "is-checked" : undefined}>
               <input
                 type="checkbox"
-                checked={selected.includes(c.code)}
-                disabled={!selected.includes(c.code) && selected.length >= 5}
+                checked={isChecked}
+                disabled={!isChecked && selected.length >= 5}
                 onChange={(e) =>
                   setSelected((s) =>
                     e.target.checked
@@ -74,7 +84,8 @@ export default function CountrySelector({
                 {countryName(c.code, c.name, lang)} <small>{c.code}</small>
               </span>
             </label>
-          ))}
+          );
+        })}
       </div>
       {selected.map((code) => (
         <input key={code} type="hidden" name="country" value={code} />

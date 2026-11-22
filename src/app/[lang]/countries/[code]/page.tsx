@@ -6,13 +6,16 @@ import { notFound } from "next/navigation";
 import {
   api,
   amount,
+  fullAmount,
   metrics,
   type Country,
   type Observation,
 } from "@/lib/api";
 import { isLocale, dictionary } from "@/lib/i18n";
+
 type Props = { params: Promise<{ lang: string; code: string }> };
 type Profile = { country: Country; observations: Observation[] };
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, code } = await params;
   return {
@@ -23,6 +26,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 }
+
+function formatDelta(current?: number, prev?: number): string | null {
+  if (
+    current === undefined ||
+    prev === undefined ||
+    !Number.isFinite(current) ||
+    !Number.isFinite(prev) ||
+    prev <= 0
+  ) {
+    return null;
+  }
+  const pct = ((current - prev) / prev) * 100;
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+}
+
 export default async function CountryPage({ params }: Props) {
   const { lang, code } = await params;
   if (!isLocale(lang) || !/^[A-Z]{3}$/.test(code)) notFound();
@@ -38,36 +57,101 @@ export default async function CountryPage({ params }: Props) {
       </p>
     );
   }
+
+  const currentUtcYear = new Date().getUTCFullYear();
   const years = [...new Set(data.observations.map((o) => o.year))]
-    .filter((y) => y <= new Date().getUTCFullYear())
+    .filter((y) => y <= currentUtcYear)
     .sort((a, b) => b - a);
+
+  const latestCards = metrics.map((m) => {
+    const series = data.observations
+      .filter((o) => o.indicator === m && o.year <= currentUtcYear)
+      .sort((a, b) => b.year - a.year);
+    const latest = series[0];
+    const prev = latest
+      ? series.find((o) => o.year === latest.year - 1)
+      : undefined;
+    const delta = formatDelta(latest?.value, prev?.value);
+    return { metric: m, latest, delta };
+  });
+
   return (
     <>
-      <section className="page-heading">
-        <p className="eyebrow">
-          {regionName(data.country.region, lang)} / {code}
-        </p>
-        <h1>{countryName(code, data.country.name, lang)}</h1>
-        <p className="lead">{t.countryTitle}</p>
+      <section className="country-hero">
+        <div className="country-hero-main">
+          <div className="hero-badge">
+            <span>{regionName(data.country.region, lang)}</span>
+            <span aria-hidden="true">·</span>
+            <span className="mono">{code}</span>
+          </div>
+          <h1>{countryName(code, data.country.name, lang)}</h1>
+          <p className="lead">{t.countryTitle}</p>
+        </div>
         <div className="hero-actions">
           <Link
-            className="button"
+            className="button button-bright"
             href={`/${lang}/compare?country=${code}&country=${code === "USA" ? "KOR" : "USA"}`}
           >
-            {t.compare}
+            {t.compare} →
           </Link>
           <Link
-            className="button secondary"
+            className="button button-glass"
             href={`/${lang}/community?space=country-${code}`}
           >
             {t.community}
           </Link>
         </div>
       </section>
+
+      <section
+        className="stats country-kpis"
+        aria-label={lang === "ko" ? "최신 주요 지표" : "Latest key indicators"}
+      >
+        {latestCards.map(({ metric, latest, delta }) => (
+          <div className="stat-card" key={metric}>
+            <div className="stat-card-top">
+              <span className="stat-label">{t[metric]}</span>
+              <span className="unit-badge">
+                {latest ? latest.year : "—"} · {metric === "ppp" ? "Int$" : "US$"}
+              </span>
+            </div>
+            <strong
+              className="stat-value"
+              title={latest ? fullAmount(latest.value, lang) : undefined}
+            >
+              {amount(latest?.value, lang)}
+            </strong>
+            <div className="stat-meta-row">
+              {latest ? (
+                <small
+                  className={`value-status ${latest.status === "ACTUAL" ? "actual" : "forecast"}`}
+                >
+                  {statusName(latest.status, lang)}
+                </small>
+              ) : (
+                <small className="stat-sub">{t.missing}</small>
+              )}
+              {delta && (
+                <span
+                  className={`delta-pill ${delta.startsWith("+") ? "up" : "down"}`}
+                >
+                  {delta} YoY
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </section>
+
       <section className="panel">
         <div className="section-head">
-          <h2>{t.history}</h2>
-          <span>IMF WEO · World Bank WDI</span>
+          <div>
+            <p className="eyebrow">
+              {lang === "ko" ? "연도별 추이" : "HISTORICAL SERIES"}
+            </p>
+            <h2>{t.history}</h2>
+          </div>
+          <span className="unit-badge">IMF WEO · World Bank WDI</span>
         </div>
         <div className="table-wrap">
           <table>
@@ -84,20 +168,41 @@ export default async function CountryPage({ params }: Props) {
             <tbody>
               {years.map((y) => (
                 <tr key={y}>
-                  <th scope="row">{y}</th>
+                  <th scope="row" className="year-cell">
+                    {y}
+                  </th>
                   {metrics.map((m) => {
                     const item = data.observations.find(
                       (o) => o.year === y && o.indicator === m,
                     );
+                    const prev = data.observations.find(
+                      (o) => o.year === y - 1 && o.indicator === m,
+                    );
+                    const delta = formatDelta(item?.value, prev?.value);
                     return (
-                      <td className="numeric" key={m}>
-                        {amount(item?.value, lang)}
+                      <td
+                        className="numeric"
+                        key={m}
+                        title={item ? fullAmount(item.value, lang) : undefined}
+                      >
+                        <span className="amount-val">
+                          {amount(item?.value, lang)}
+                        </span>
                         {item && (
-                          <small
-                            className={`value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`}
-                          >
-                            {statusName(item.status, lang)}
-                          </small>
+                          <span className="cell-badges">
+                            <small
+                              className={`value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`}
+                            >
+                              {statusName(item.status, lang)}
+                            </small>
+                            {delta && (
+                              <span
+                                className={`delta-inline ${delta.startsWith("+") ? "up" : "down"}`}
+                              >
+                                {delta}
+                              </span>
+                            )}
+                          </span>
                         )}
                       </td>
                     );

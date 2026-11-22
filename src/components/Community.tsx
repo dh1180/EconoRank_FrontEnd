@@ -236,7 +236,14 @@ export default function Community({
     <div className="community-layout">
       <aside>
         <section className="panel account-panel">
-          <h2>{member ? member.displayName : t.account}</h2>
+          <div className="account-header">
+            {member && (
+              <span className="avatar-badge" aria-hidden="true">
+                {member.displayName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <h2>{member ? member.displayName : t.account}</h2>
+          </div>
           {member ? (
             <>
               <button

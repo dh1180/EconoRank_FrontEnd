@@ -14,6 +14,7 @@ import {
   type RankingPage,
 } from "@/lib/api";
 import { notFound } from "next/navigation";
+
 export async function generateMetadata({
   params,
 }: {
@@ -29,6 +30,7 @@ export async function generateMetadata({
     openGraph: { title: "StatAgora · Global economic rankings" },
   };
 }
+
 export default async function Rankings({
   params,
   searchParams,
@@ -69,60 +71,125 @@ export default async function Rankings({
       (s) => s.provider === data?.provider,
     )?.checkedAt;
   } catch {}
+
   const url = (p: number) =>
     `/${lang}?indicator=${metric}&source=${source}&year=${year}&page=${p}#rankings`;
+  const topFive = data?.items.slice(0, 5) ?? [];
+  const topLeaderValue = data?.items[0]?.value ?? 1;
+  const unitLabel = metric === "ppp" ? "Int$" : "US$";
+
   return (
     <>
       <section className="hero">
-        <div>
-          <p className="eyebrow">{t.eyebrow}</p>
+        <div className="hero-copy">
+          <div className="hero-badge">
+            <span className="sync-dot" aria-hidden="true" />
+            <span>{t.eyebrow}</span>
+          </div>
           <h1>
             {lang === "ko" ? (
               <>
                 <span className="headline-line">세계 경제를 보는</span>
-                <span className="headline-line">더 선명한 시선.</span>
+                <span className="headline-line hero-accent">더 선명한 시선.</span>
               </>
             ) : (
-              t.headline
+              <>
+                A clearer view of the{" "}
+                <em className="hero-serif">global economy.</em>
+              </>
             )}
           </h1>
           <p className="lead">{t.intro}</p>
           <div className="hero-actions">
-            <a className="button" href="#rankings">
+            <a className="button button-bright" href="#rankings">
               {t.view}
             </a>
-            <Link className="button secondary" href={`/${lang}/compare`}>
-              {t.compare}
+            <Link className="button button-glass" href={`/${lang}/compare`}>
+              {t.compare} →
             </Link>
           </div>
         </div>
-        <div className="globe" aria-hidden="true">
-          <div className="orbit one" />
-          <div className="orbit two" />
-          <div className="orbit three" />
-          <span>
-            STAT / AGORA
-            <br />
-            <b>
-              GLOBAL
-              <br />
-              PERSPECTIVE
-            </b>
-          </span>
+
+        <div className="hero-snapshot" aria-label={lang === "ko" ? "상위 5개국 요약" : "Top 5 economies snapshot"}>
+          <div className="snapshot-head">
+            <div>
+              <span className="snapshot-kicker">
+                {lang === "ko" ? "실시간 리더보드" : "LIVE LEADERBOARD"}
+              </span>
+              <strong>{t[metric]}</strong>
+            </div>
+            <span className="snapshot-pill">
+              {year ?? "—"} · {unitLabel}
+            </span>
+          </div>
+          {topFive.length > 0 ? (
+            <ol className="snapshot-list">
+              {topFive.map((row) => {
+                const pct = Math.max(4, (row.value / topLeaderValue) * 100);
+                return (
+                  <li key={row.code}>
+                    <Link href={`/${lang}/countries/${row.code}`} className="snapshot-row">
+                      <div className="snapshot-row-top">
+                        <span className="snapshot-country">
+                          <span className={`snapshot-rank rank-${row.rank}`}>
+                            {row.rank.toString().padStart(2, "0")}
+                          </span>
+                          <span className="snapshot-code">{row.code}</span>
+                          <span className="snapshot-name">
+                            {countryName(row.code, row.name, lang)}
+                          </span>
+                        </span>
+                        <span className="snapshot-val">
+                          {amount(row.value, lang)}
+                        </span>
+                      </div>
+                      <div className="snapshot-track">
+                        <span style={{ width: `${pct}%` }} />
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <div className="snapshot-empty">
+              <p>STAT / AGORA</p>
+              <strong>IMF WEO · World Bank WDI</strong>
+            </div>
+          )}
+          <div className="snapshot-foot">
+            <span>
+              {data?.provider === "imf" ? "IMF WEO" : "World Bank WDI"}
+            </span>
+            <a href="#rankings">
+              {lang === "ko" ? "전체 순위 보기 ↓" : "Full rankings ↓"}
+            </a>
+          </div>
         </div>
       </section>
+
       <section className="stats" aria-label={t.coverage}>
-        <div>
-          <span>{t.countries}</span>
-          <strong>{data?.total ?? "—"}</strong>
+        <div className="stat-card">
+          <span className="stat-label">{t.countries}</span>
+          <strong className="stat-value">{data?.total ?? "—"}</strong>
+          <small className="stat-sub">
+            {lang === "ko" ? "지역 합계 제외 · 공식 경제권" : "Official economies · aggregates excluded"}
+          </small>
         </div>
-        <div>
-          <span>{t.year}</span>
-          <strong>{year}</strong>
+        <div className="stat-card">
+          <span className="stat-label">{t.year}</span>
+          <strong className="stat-value">{year ?? "—"}</strong>
+          <small className="stat-sub">
+            {data?.items[0]
+              ? statusName(data.items[0].status, lang)
+              : lang === "ko"
+                ? "최신 제공 연도"
+                : "Latest available year"}
+          </small>
         </div>
-        <div>
-          <span>{t.source}</span>
-          <strong className="source-stat">
+        <div className="stat-card">
+          <span className="stat-label">{t.source}</span>
+          <strong className="stat-value source-stat">
             {data?.provider === "imf" ? (
               <>
                 IMF <small>WEO</small>
@@ -133,8 +200,13 @@ export default async function Rankings({
               </>
             )}
           </strong>
+          <small className="stat-sub stat-live">
+            <span className="sync-dot" aria-hidden="true" />
+            {lang === "ko" ? "6시간마다 공식 발표 자동 확인" : "Auto-checked every 6 hours"}
+          </small>
         </div>
       </section>
+
       <section id="rankings" className="panel rankings">
         <div className="section-head">
           <div>
@@ -159,24 +231,37 @@ export default async function Rankings({
             </button>
           </form>
         </div>
-        <div className="tabs" role="navigation" aria-label={t.rankings}>
-          {metrics.map((m) => (
-            <Link
-              key={m}
-              className={m === metric ? "active" : ""}
-              aria-current={m === metric ? "page" : undefined}
-              href={`/${lang}?indicator=${m}&source=${m === "exports" ? "worldbank" : source}#rankings`}
-            >
-              {t[m]}
-            </Link>
-          ))}
+
+        <div className="tabs-bar">
+          <div className="tabs" role="navigation" aria-label={t.rankings}>
+            {metrics.map((m) => (
+              <Link
+                key={m}
+                className={m === metric ? "active" : ""}
+                aria-current={m === metric ? "page" : undefined}
+                href={`/${lang}?indicator=${m}&source=${m === "exports" ? "worldbank" : source}#rankings`}
+              >
+                {t[m]}
+              </Link>
+            ))}
+          </div>
+          {data && (
+            <span className="unit-badge">
+              {year} · {unitLabel}
+            </span>
+          )}
         </div>
+
         {!data ? (
-          <p className="notice" role="alert">
-            {t.unavailable}
-          </p>
+          <div className="panel-pad">
+            <p className="notice" role="alert">
+              {t.unavailable}
+            </p>
+          </div>
         ) : data.items.length === 0 ? (
-          <p className="notice">{t.empty}</p>
+          <div className="panel-pad">
+            <p className="notice">{t.empty}</p>
+          </div>
         ) : (
           <div className="table-wrap">
             <table>
@@ -189,9 +274,7 @@ export default async function Rankings({
                   <th scope="col">{t.country}</th>
                   <th scope="col" className="numeric">
                     {t.value}{" "}
-                    <span className="muted">
-                      ({metric === "ppp" ? "Int$" : "US$"})
-                    </span>
+                    <span className="muted">({unitLabel})</span>
                   </th>
                   <th scope="col" className="bar-column">
                     <span className="sr-only">Relative value</span>
@@ -199,79 +282,100 @@ export default async function Rankings({
                 </tr>
               </thead>
               <tbody>
-                {data.items.map((row) => (
-                  <tr key={row.code}>
-                    <td className="rank-number">
-                      {row.rank.toString().padStart(2, "0")}
-                    </td>
-                    <td>
-                      <Link
-                        className="country-name"
-                        href={`/${lang}/countries/${row.code}`}
-                      >
-                        <span className="country-code">{row.code}</span>
-                        {countryName(row.code, row.name, lang)}
-                      </Link>
-                      <span className="region">
-                        {regionName(row.region, lang)}
-                      </span>
-                    </td>
-                    <td className="numeric" title={fullAmount(row.value, lang)}>
-                      {amount(row.value, lang)}
-                      <small
-                        className={`value-status ${row.status === "ACTUAL" ? "actual" : "forecast"}`}
-                      >
-                        {statusName(row.status, lang)}
-                      </small>
-                    </td>
-                    <td className="bar-column">
-                      <div className="bar-track">
-                        <div
-                          style={{
-                            width: `${Math.max(1, (row.value / data.items[0].value) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {data.items.map((row) => {
+                  const isTop3 = row.rank >= 1 && row.rank <= 3;
+                  const sharePct = Math.max(
+                    1,
+                    (row.value / topLeaderValue) * 100,
+                  );
+                  return (
+                    <tr key={row.code} className={isTop3 ? "top-row" : undefined}>
+                      <td className="rank-number">
+                        <span
+                          className={
+                            isTop3
+                              ? `rank-medal rank-medal-${row.rank}`
+                              : "rank-plain"
+                          }
+                        >
+                          {row.rank.toString().padStart(2, "0")}
+                        </span>
+                      </td>
+                      <td>
+                        <Link
+                          className="country-name"
+                          href={`/${lang}/countries/${row.code}`}
+                        >
+                          <span className="country-code">{row.code}</span>
+                          <span className="country-meta">
+                            <span className="country-label">
+                              {countryName(row.code, row.name, lang)}
+                            </span>
+                            <span className="region">
+                              {regionName(row.region, lang)}
+                            </span>
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="numeric" title={fullAmount(row.value, lang)}>
+                        <span className="amount-val">
+                          {amount(row.value, lang)}
+                        </span>
+                        <small
+                          className={`value-status ${row.status === "ACTUAL" ? "actual" : "forecast"}`}
+                        >
+                          {statusName(row.status, lang)}
+                        </small>
+                      </td>
+                      <td className="bar-column">
+                        <div className="bar-track">
+                          <div style={{ width: `${sharePct}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
+
         {data && data.total > 25 && (
           <div className="pagination">
             {page > 0 ? (
               <Link className="small-button" href={url(page - 1)}>
-                {t.previous}
+                ← {t.previous}
               </Link>
             ) : (
               <span />
             )}
-            <span>
-              {page + 1} / {Math.max(1, Math.ceil(data.total / 25))}
+            <span className="page-indicator">
+              <strong>{page + 1}</strong> /{" "}
+              {Math.max(1, Math.ceil(data.total / 25))}
             </span>
             {(page + 1) * 25 < data.total ? (
               <Link className="small-button" href={url(page + 1)}>
-                {t.next}
+                {t.next} →
               </Link>
             ) : (
               <span />
             )}
           </div>
         )}
+
         {data && (
           <Provenance items={data.items} lang={lang} checkedAt={checkedAt} />
         )}
       </section>
+
       <section className="community-banner">
         <div>
           <p className="eyebrow">THE AGORA</p>
           <h2>{t.discussion}</h2>
           <p>{t.discussionText}</p>
         </div>
-        <Link className="button" href={`/${lang}/community`}>
-          {t.join}
+        <Link className="button button-bright" href={`/${lang}/community`}>
+          {t.join} →
         </Link>
       </section>
     </>

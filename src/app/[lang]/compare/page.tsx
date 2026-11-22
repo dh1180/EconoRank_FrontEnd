@@ -12,9 +12,11 @@ import {
 } from "@/lib/api";
 import { isLocale, dictionary } from "@/lib/i18n";
 import { countryName } from "@/lib/geography";
+import { COMPARE_COLORS } from "@/lib/palette";
 import CountrySelector from "@/components/CountrySelector";
 import SourceSelect from "@/components/SourceSelect";
 import Provenance, { statusName, editionName } from "@/components/Provenance";
+
 export async function generateMetadata({
   params,
 }: {
@@ -29,6 +31,7 @@ export async function generateMetadata({
     },
   };
 }
+
 export default async function Compare({
   params,
   searchParams,
@@ -79,7 +82,7 @@ export default async function Compare({
   const chosen = selected
     .map((code) => countries.find((c) => c.code === code))
     .filter((c): c is Country => !!c);
-  const colors = ["#087f6a", "#5085c6", "#b48132", "#9568bc", "#b66073"];
+
   return (
     <>
       <section className="page-heading">
@@ -89,6 +92,7 @@ export default async function Compare({
         <h1>{t.compareTitle}</h1>
         <p className="lead">{t.compareIntro}</p>
       </section>
+
       <div className="compare-layout">
         <form className="panel selection">
           <div className="selection-heading">
@@ -117,28 +121,35 @@ export default async function Compare({
             {t.apply}
           </button>
         </form>
+
         <section className="comparison-results" aria-live="polite">
-          <div className="comparison-summary">
+          <div className="panel comparison-summary">
             <div>
               <p className="eyebrow">
-                {lang === "ko" ? "선택한 국가" : "YOUR COMPARISON"}
+                {lang === "ko" ? "선택한 국가" : "ACTIVE COMPARISON"}
               </p>
               <h2>
-                {year ?? "—"}{" "}
+                {year ?? "—"}
                 <span>
-                  {lang === "ko" ? "년 경제 현황" : "economic overview"}
+                  {lang === "ko" ? "년 경제 현황" : " economic overview"}
                 </span>
               </h2>
             </div>
             <div className="country-legend">
               {chosen.map((c, i) => (
-                <span key={c.code}>
-                  <i style={{ background: colors[i] }} />
-                  {countryName(c.code, c.name, lang)}
-                </span>
+                <Link
+                  key={c.code}
+                  href={`/${lang}/countries/${c.code}`}
+                  className="legend-pill"
+                >
+                  <i style={{ background: COMPARE_COLORS[i % COMPARE_COLORS.length] }} />
+                  <span>{countryName(c.code, c.name, lang)}</span>
+                  <small>{c.code}</small>
+                </Link>
               ))}
             </div>
           </div>
+
           {failed ? (
             <p className="notice" role="alert">
               {t.unavailable}
@@ -156,7 +167,7 @@ export default async function Compare({
                     <div>
                       <p className="metric-caption">
                         {metric === "gdp"
-                          ? "GDP"
+                          ? "NOMINAL GDP"
                           : metric === "ppp"
                             ? "PURCHASING POWER PARITY"
                             : "GOODS & SERVICES"}
@@ -167,38 +178,56 @@ export default async function Compare({
                       {year} · {metric === "ppp" ? "Int$" : "US$"}
                     </span>
                   </div>
-                  {chosen.map((c, i) => {
-                    const item = values.find((v) => v.code === c.code);
-                    return (
-                      <div key={c.code} className="comparison-row">
-                        <div>
-                          <Link
-                            className="comparison-country"
-                            href={`/${lang}/countries/${c.code}`}
-                          >
-                            <span className="country-code">{c.code}</span>
-                            {countryName(c.code, c.name, lang)}
-                          </Link>
-                          <div className="comparison-value">
-                            <strong>{amount(item?.value, lang)}</strong>
-                            <small>
-                              {item ? statusName(item.status, lang) : t.missing}
-                            </small>
+                  <div className="comparison-rows">
+                    {chosen.map((c, i) => {
+                      const item = values.find((v) => v.code === c.code);
+                      const ratio = item
+                        ? Math.round((item.value / max) * 100)
+                        : 0;
+                      const barColor =
+                        COMPARE_COLORS[i % COMPARE_COLORS.length];
+                      return (
+                        <div key={c.code} className="comparison-row">
+                          <div className="comparison-row-top">
+                            <Link
+                              className="comparison-country"
+                              href={`/${lang}/countries/${c.code}`}
+                            >
+                              <i
+                                className="row-dot"
+                                style={{ background: barColor }}
+                                aria-hidden="true"
+                              />
+                              <span className="country-code">{c.code}</span>
+                              <span>{countryName(c.code, c.name, lang)}</span>
+                            </Link>
+                            <div className="comparison-value">
+                              <strong>{amount(item?.value, lang)}</strong>
+                              <small
+                                className={
+                                  item
+                                    ? `value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`
+                                    : "value-status"
+                                }
+                              >
+                                {item
+                                  ? `${statusName(item.status, lang)} · ${ratio}%`
+                                  : t.missing}
+                              </small>
+                            </div>
+                          </div>
+                          <div className="comparison-bar">
+                            <span
+                              style={{
+                                width: item ? `${Math.max(2, (item.value / max) * 100)}%` : "0",
+                                background: barColor,
+                              }}
+                            />
                           </div>
                         </div>
-                        <div className="comparison-bar">
-                          <span
-                            style={{
-                              width: item
-                                ? `${(item.value / max) * 100}%`
-                                : "0",
-                              background: colors[i],
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                   <div className="comparison-source">
                     {first ? (
                       <>
@@ -207,7 +236,7 @@ export default async function Compare({
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {first.source}
+                          {first.source} ↗
                         </a>
                         <span>{editionName(first, lang)}</span>
                       </>
