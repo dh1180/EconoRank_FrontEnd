@@ -2939,6 +2939,11 @@ html[data-theme="dark"] .preset-pill.active {
   letter-spacing: 0.03em;
 }
 
+.country-col {
+  white-space: nowrap;
+  padding-inline: 16px;
+}
+
 .company-country-link {
   display: inline-flex;
   align-items: center;
@@ -2946,16 +2951,33 @@ html[data-theme="dark"] .preset-pill.active {
   font-size: 0.86rem;
   color: var(--ink-soft);
   font-weight: 500;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .company-country-link:hover {
   color: var(--accent);
 }
 
+.price-col {
+  white-space: nowrap;
+  padding-inline: 16px;
+}
+
 .price-val {
   font-size: 0.88rem;
   color: var(--ink-soft);
   font-weight: 550;
+}
+
+#companies .bar-column {
+  width: 13%;
+}
+
+#companies th,
+#companies td {
+  padding: 14px 18px;
 }
 
 @media (max-width: 760px) {
