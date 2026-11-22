@@ -4,7 +4,7 @@ import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
 import CountryFlag from "@/components/CountryFlag";
 import type { Country } from "@/lib/api";
-import type { Locale } from "@/lib/i18n";
+import { dictionary, type Locale } from "@/lib/i18n";
 
 export default function CountrySelector({
   countries,
@@ -15,6 +15,7 @@ export default function CountrySelector({
   initial: string[];
   lang: Locale;
 }) {
+  const t = dictionary(lang);
   const [selected, setSelected] = useState(initial),
     [query, setQuery] = useState("");
   const filtered = countries.filter((c) =>
@@ -26,19 +27,17 @@ export default function CountrySelector({
   return (
     <>
       <label htmlFor="country-search" className="field-label">
-        {lang === "ko" ? "국가 검색" : "Find a country"}
+        {t.findCountry}
       </label>
       <input
         id="country-search"
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder={
-          lang === "ko" ? "국가명 또는 코드 (예: 대한, USA)" : "Name or ISO code (e.g. Korea, USA)"
-        }
+        placeholder={t.countrySearchHint}
       />
       <p className="selection-counter muted" aria-live="polite">
-        <strong>{selected.length}</strong> / 5 {lang === "ko" ? "선택됨" : "selected"}
+        <strong>{selected.length}</strong> / 5 {t.selectedCount}
       </p>
       <div className="selected-countries">
         {selected.map((code, idx) => {

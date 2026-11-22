@@ -24,8 +24,9 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
+  const t = dictionary(isLocale(lang) ? lang : "en");
   return {
-    title: lang === "ko" ? "국가 경제 비교" : "Compare national economies",
+    title: t.compare,
     alternates: {
       canonical: `/${lang}/compare`,
       languages: { en: "/en/compare", ko: "/ko/compare" },
@@ -79,24 +80,22 @@ export default async function Compare({
     .map((code) => countries.find((c) => c.code === code))
     .filter((c): c is Country => !!c);
 
-  const presets: { label: string; koLabel: string; codes: string[] }[] = [
-    { label: "Top 5 Economies", koLabel: "세계 Top 5", codes: ["USA", "CHN", "DEU", "JPN", "IND"] },
-    { label: "KR · US · JP · CN", koLabel: "한·미·일·중", codes: ["KOR", "USA", "JPN", "CHN"] },
-    { label: "EU Big 4", koLabel: "유럽 주요 4개국", codes: ["DEU", "FRA", "ITA", "ESP"] },
-    { label: "Nordics", koLabel: "북유럽 4개국", codes: ["NOR", "SWE", "DNK", "FIN"] },
-    { label: "ASEAN Top 4", koLabel: "아세안 주요 4개국", codes: ["IDN", "SGP", "THA", "VNM"] },
-    { label: "BRICS", koLabel: "BRICS 5개국", codes: ["CHN", "IND", "BRA", "RUS", "ZAF"] },
+  const presets: { label: string; codes: string[] }[] = [
+    { label: t.presetTop5, codes: ["USA", "CHN", "DEU", "JPN", "IND"] },
+    { label: t.presetEastAsia, codes: ["KOR", "USA", "JPN", "CHN"] },
+    { label: t.presetEu4, codes: ["DEU", "FRA", "ITA", "ESP"] },
+    { label: t.presetNordics, codes: ["NOR", "SWE", "DNK", "FIN"] },
+    { label: t.presetAsean, codes: ["IDN", "SGP", "THA", "VNM"] },
+    { label: t.presetBrics, codes: ["CHN", "IND", "BRA", "RUS", "ZAF"] },
   ];
 
   return (
     <>
       <section className="page-heading">
-        <p className="eyebrow">
-          {lang === "ko" ? "국가별 경제 비교 · IMF WEO" : "COUNTRY COMPARISON · IMF WEO"}
-        </p>
+        <p className="eyebrow">{t.countryComparisonEyebrow}</p>
         <h1>{t.compareTitle}</h1>
         <p className="lead">{t.compareIntro}</p>
-        <div className="preset-bar" aria-label={lang === "ko" ? "빠른 비교 프리셋" : "Quick comparison presets"}>
+        <div className="preset-bar" aria-label={t.quickPresets}>
           <span className="preset-label">{t.quickPresets}</span>
           {presets.map((p) => {
             const qs = p.codes.map((c) => `country=${c}`).join("&");
@@ -110,7 +109,7 @@ export default async function Compare({
                 href={`/${lang}/compare?${qs}${year ? `&year=${year}` : ""}`}
                 className={`preset-pill ${active ? "active" : ""}`}
               >
-                {lang === "ko" ? p.koLabel : p.label}
+                {p.label}
               </Link>
             );
           })}
@@ -143,13 +142,12 @@ export default async function Compare({
         <section className="comparison-results" aria-live="polite">
           <div className="panel comparison-summary">
             <div>
-              <p className="eyebrow">
-                {lang === "ko" ? "선택한 국가" : "ACTIVE COMPARISON"}
-              </p>
+              <p className="eyebrow">{t.activeComparison}</p>
               <h2>
                 {year ?? "—"}
                 <span>
-                  {lang === "ko" ? "년 경제 현황" : " economic overview"}
+                  {lang === "ko" || lang === "ja" || lang === "zh" ? "" : " "}
+                  {t.economicOverview}
                 </span>
               </h2>
             </div>
@@ -269,11 +267,7 @@ export default async function Compare({
                         <span>{editionName(first, lang)}</span>
                       </>
                     ) : (
-                      <span>
-                        {lang === "ko"
-                          ? `${year}년 자료가 아직 없습니다. 다른 기준연도를 선택해 주세요.`
-                          : `No observations for ${year}. Choose another reference year.`}
-                      </span>
+                      <span>{t.noObsForYear}</span>
                     )}
                   </div>
                 </article>

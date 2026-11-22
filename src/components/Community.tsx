@@ -79,6 +79,53 @@ async function mutate<T>(
   return response.json();
 }
 
+function defaultGuestPlaceholder(countryCode: string | null): string {
+  switch (countryCode?.toUpperCase()) {
+    case "KOR":
+      return "ㅇㅇ";
+    case "JPN":
+      return "名無し";
+    case "CHN":
+    case "TWN":
+    case "HKG":
+      return "匿名";
+    case "RUS":
+      return "Аноним";
+    case "UKR":
+      return "Анонім";
+    case "SAU":
+    case "ARE":
+    case "EGY":
+      return "مجهول";
+    case "DEU":
+    case "AUT":
+    case "CHE":
+      return "Anonym";
+    case "FRA":
+    case "BEL":
+      return "Anonyme";
+    case "ESP":
+    case "MEX":
+    case "ARG":
+      return "Anónimo";
+    case "BRA":
+    case "PRT":
+      return "Anônimo";
+    case "ITA":
+      return "Anonimo";
+    case "TUR":
+      return "Anonim";
+    case "VNM":
+      return "Ẩn danh";
+    case "THA":
+      return "นิรนาม";
+    case "IND":
+      return "अनाम";
+    default:
+      return "Anon";
+  }
+}
+
 function AuthorTag({
   name,
   countryCode,
@@ -115,6 +162,7 @@ export default function Community({
 }) {
   const t = dictionary(lang);
   const [member, setMember] = useState<Member | null>(null),
+    [geoCountry, setGeoCountry] = useState<string | null>(null),
     [page, setPage] = useState(0);
   const [feed, setFeed] = useState<Feed>({ items: [], total: 0 }),
     [selected, setSelected] = useState<string | null>(initialPost),
@@ -159,6 +207,9 @@ export default function Community({
     read<Member>("/auth/me")
       .then(setMember)
       .catch(() => setMember(null));
+    read<{ countryCode?: string | null }>("/geo")
+      .then((g) => setGeoCountry(g?.countryCode ?? null))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -664,7 +715,7 @@ export default function Community({
                       <input
                         name="guestName"
                         maxLength={40}
-                        placeholder={lang === "ko" ? "ㅇㅇ" : lang === "ja" ? "名無し" : lang === "zh" ? "匿名" : "Anon"}
+                        placeholder={defaultGuestPlaceholder(geoCountry)}
                       />
                     </label>
                     <label>
@@ -781,7 +832,7 @@ export default function Community({
                           <input
                             name="guestName"
                             maxLength={40}
-                            placeholder={lang === "ko" ? "ㅇㅇ" : lang === "ja" ? "名無し" : lang === "zh" ? "匿名" : "Anon"}
+                            placeholder={defaultGuestPlaceholder(geoCountry)}
                           />
                         </label>
                         <label>
@@ -862,7 +913,7 @@ export default function Community({
                           </h3>
                           <p className="post-excerpt">
                             {p.body
-                              .replace(/\[\[stat:[^\]]+\]\]/g, lang === "ko" ? "[지표 카드]" : "[Stat Card]")
+                              .replace(/\[\[stat:[^\]]+\]\]/g, t.statCardTag)
                               .slice(0, 180)}
                           </p>
                           {actions("post", p)}

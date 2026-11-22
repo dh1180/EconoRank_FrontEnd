@@ -20,8 +20,9 @@ type Profile = { country: Country; observations: Observation[] };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, code } = await params;
+  const t = dictionary(isLocale(lang) ? lang : "en");
   return {
-    title: `${code} · ${lang === "ko" ? "국가 경제 현황" : "Economic profile"}`,
+    title: `${code} · ${t.countryTitle}`,
     alternates: {
       canonical: `/${lang}/countries/${code}`,
       languages: { en: `/en/countries/${code}`, ko: `/ko/countries/${code}` },
@@ -153,9 +154,7 @@ export default async function CountryPage({ params }: Props) {
       <section className="panel">
         <div className="section-head">
           <div>
-            <p className="eyebrow">
-              {lang === "ko" ? "연도별 추이" : "HISTORICAL SERIES"}
-            </p>
+            <p className="eyebrow">{t.historicalSeries}</p>
             <h2>{t.history}</h2>
           </div>
           <span className="unit-badge">IMF WEO</span>

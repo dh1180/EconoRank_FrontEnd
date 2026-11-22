@@ -174,21 +174,13 @@ export default async function Rankings({
         <div className="stat-card">
           <span className="stat-label">{t.countries}</span>
           <strong className="stat-value">{data?.total ?? "—"}</strong>
-          <small className="stat-sub">
-            {lang === "ko"
-              ? "지역 합계 제외 · 공식 경제권"
-              : "Official economies · aggregates excluded"}
-          </small>
+          <small className="stat-sub">{t.officialEconomiesSub}</small>
         </div>
         <div className="stat-card">
           <span className="stat-label">{t.year}</span>
           <strong className="stat-value">{year ?? "—"}</strong>
           <small className="stat-sub">
-            {allItems[0]
-              ? statusName(allItems[0].status, lang)
-              : lang === "ko"
-                ? "최신 제공 연도"
-                : "Latest available year"}
+            {allItems[0] ? statusName(allItems[0].status, lang) : t.latestYearSub}
           </small>
         </div>
         <div className="stat-card">
@@ -198,9 +190,7 @@ export default async function Rankings({
           </strong>
           <small className="stat-sub stat-live">
             <span className="sync-dot" aria-hidden="true" />
-            {lang === "ko"
-              ? "매일 1회 IMF 공식 발표 자동 확인"
-              : "IMF WEO auto-checked daily"}
+            {t.imfDailySub}
           </small>
         </div>
       </section>

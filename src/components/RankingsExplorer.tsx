@@ -242,7 +242,7 @@ export default function RankingsExplorer({
               }}
             >
               <option value="ALL">
-                {lang === "ko" ? `전체 권역 (${items.length})` : `All regions (${items.length})`}
+                {t.allRegions} ({items.length})
               </option>
               {regionShares.map((seg) => (
                 <option key={seg.region} value={seg.region}>

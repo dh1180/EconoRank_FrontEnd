@@ -3,8 +3,10 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { WORLD_LOCALES, localeMeta, type Locale } from "@/lib/locales";
+import { dictionary } from "@/lib/i18n";
 
 function SwitcherInner({ lang }: { lang: Locale }) {
+  const t = dictionary(lang);
   const path = usePathname() || `/${lang}`;
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
@@ -93,20 +95,14 @@ function SwitcherInner({ lang }: { lang: Locale }) {
               className="lang-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                lang === "ko"
-                  ? `언어 검색 (${WORLD_LOCALES.length}개 언어)...`
-                  : `Search ${WORLD_LOCALES.length} languages...`
-              }
+              placeholder={t.searchLangPlaceholder}
             />
           </div>
 
           <div className="lang-list" role="listbox">
             {!q && (
               <>
-                <p className="lang-group-label">
-                  {lang === "ko" ? "주요 언어" : "Popular"}
-                </p>
+                <p className="lang-group-label">{t.popularLangs}</p>
                 {popular.map((l) => (
                   <Link
                     key={`pop-${l.code}`}
@@ -129,17 +125,13 @@ function SwitcherInner({ lang }: { lang: Locale }) {
                   </Link>
                 ))}
                 <p className="lang-group-label">
-                  {lang === "ko"
-                    ? `전체 언어 (${WORLD_LOCALES.length})`
-                    : `All languages (${WORLD_LOCALES.length})`}
+                  {t.all} ({WORLD_LOCALES.length})
                 </p>
               </>
             )}
 
             {filtered.length === 0 ? (
-              <p className="lang-empty">
-                {lang === "ko" ? "검색 결과가 없습니다." : "No matching language."}
-              </p>
+              <p className="lang-empty">{t.noMatchingLang}</p>
             ) : (
               filtered.map((l) => (
                 <Link
