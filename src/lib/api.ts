@@ -6,6 +6,11 @@ export type Observation = Country & {
   unit: string;
   sourceUrl: string;
   retrievedAt: string;
+  provider: "imf" | "worldbank";
+  source: string;
+  publishedAt: string;
+  edition: string;
+  status: "ACTUAL" | "ESTIMATE_OR_FORECAST";
 };
 export type Ranking = Observation & { rank: number };
 export type RankingPage = {
@@ -16,6 +21,7 @@ export type RankingPage = {
   indicator: string;
   year: number;
   source: string;
+  provider: "imf" | "worldbank";
 };
 export const metrics = ["gdp", "ppp", "exports"] as const;
 export type Metric = (typeof metrics)[number];

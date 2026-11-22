@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { countryName } from "@/lib/geography";
 import type { Country } from "@/lib/api";
 import type { Locale } from "@/lib/i18n";
 export default function CountrySelector({
@@ -30,10 +31,30 @@ export default function CountrySelector({
       <p className="muted" aria-live="polite">
         {selected.length} / 5 {lang === "ko" ? "선택" : "selected"}
       </p>
+      <div className="selected-countries">
+        {selected.map((code) => {
+          const c = countries.find((c) => c.code === code);
+          return (
+            <button
+              key={code}
+              type="button"
+              aria-label={`${lang === "ko" ? "선택 해제" : "Remove"} ${countryName(code, c?.name || code, lang)}`}
+              onClick={() =>
+                setSelected((s) => s.filter((item) => item !== code))
+              }
+            >
+              {countryName(code, c?.name || code, lang)}{" "}
+              <span aria-hidden="true">×</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="country-options">
         {countries
           .filter((c) =>
-            (c.name + " " + c.code).toLowerCase().includes(query.toLowerCase()),
+            (countryName(c.code, c.name, lang) + " " + c.name + " " + c.code)
+              .toLowerCase()
+              .includes(query.toLowerCase()),
           )
           .map((c) => (
             <label key={c.code}>
@@ -50,7 +71,7 @@ export default function CountrySelector({
                 }
               />
               <span>
-                {c.name} <small>{c.code}</small>
+                {countryName(c.code, c.name, lang)} <small>{c.code}</small>
               </span>
             </label>
           ))}

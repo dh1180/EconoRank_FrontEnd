@@ -26,8 +26,8 @@ Windows: `Copy-Item .env.example .env.local`. Start the backend on port 8080, th
 - Server-rendered GDP, GDP at PPP, and exports rankings with metric/year filters, pagination and country detail links.
 - Genuine World Bank WDI data from the API. Reference year, retrieval date, source links, unit and goods/services definition displayed. No made-up fallback values.
 - Searchable comparison selector for up to five economies, common-year bar charts and explicit missing values.
-- Country pages with 2022–2024 observations and country-specific discussion entry.
-- English/Korean routes and UI dictionaries, locale-aware number formatting, language metadata and locale switching that keeps the current path. World Bank economy/region names remain in their official English form.
+- Country pages with historical observations and labeled current-year IMF estimates/forecasts and country-specific discussion entry.
+- English/Korean routes and UI dictionaries, locale-aware number formatting, language metadata and locale switching that keeps the current path. Korean country and region names are used throughout rankings, comparison search/chips, country profiles and community selectors; English preserves publisher names.
 - Page metadata, canonical/hreflang links, sitemap, robots, semantic tables, skip link, visible keyboard focus, responsive layouts and reduced-motion support.
 - Real session-based registration/login/logout, plain-text posts/comments, author soft deletion, reports, blocked-author management and an administrator report/hide panel. Community pages are excluded from indexing in the MVP.
 - Readable empty, loading, error and API-unavailable states. Fetch failures are not replaced with mock statistics.
@@ -54,4 +54,8 @@ npm run typecheck
 
 Tests cover URL input boundaries, missing versus zero values, both number locales and explicit upstream failures. Production build and strict type checking are also run by CI. Local browser verification covered rankings, comparison changes, registration, post creation with script-like text rendered safely, and comment persistence through the actual Spring Boot proxy. No production accounts or data are seeded.
 
-The API defaults to the reviewed 2024 reference year, with 2022–2024 in the initial snapshot. Refresh data through the backend importer, then rebuild/restart. The initial community displays the first 100 replies in a thread and moderation's first 50 reports; API report pagination is available for future UI extension. No live chat or auto translation is claimed. See the backend README for single-instance session/rate-limit constraints and deployment preparation.
+The API now defaults to the latest IMF GDP/PPP release and latest available reference year up to the current year; exports use World Bank actuals. The source selector can switch to WDI actuals. Every view shows source publication vintage, reference year and actual/estimate/forecast status, with available source/retrieval details. The backend polls the official sources every six hours without rebuilding the frontend. Missing exports for a chosen year remain unavailable, without silently switching years.
+
+The comparison screen uses selected-country chips, compact searchable choices, consistent country colors, metric cards with units and per-card source information. Korean headings use deliberate line grouping and Korean fonts; table rank headings do not split. Flexible grids, shrinkable fieldsets, wrapping country names and locally scrollable tables preserve content at narrow widths.
+
+The community still displays the first 100 replies and the first 50 reports. No live chat or auto translation is claimed. See the backend README for source update configuration and single-instance operating constraints. Tests now include Korean country/region display and English-name preservation (5 frontend tests total).

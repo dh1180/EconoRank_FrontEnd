@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import { countryName } from "@/lib/geography";
 import { dictionary, type Locale } from "@/lib/i18n";
 import type { Country } from "@/lib/api";
 type Member = { id: string; displayName: string; role: string };
@@ -293,7 +294,7 @@ export default function Community({
             <option value="global">{t.global}</option>
             {countries.map((c) => (
               <option key={c.code} value={`country-${c.code}`}>
-                {c.name}
+                {countryName(c.code, c.name, lang)}
               </option>
             ))}
           </select>
@@ -468,8 +469,12 @@ export default function Community({
                   ? t.reply
                   : space === "global"
                     ? t.global
-                    : countries.find((c) => `country-${c.code}` === space)
-                        ?.name || space}
+                    : countryName(
+                        space.replace("country-", ""),
+                        countries.find((c) => `country-${c.code}` === space)
+                          ?.name || space,
+                        lang,
+                      )}
               </h2>
               {selected ? (
                 <button className="small-button" onClick={() => openPost(null)}>

@@ -1,3 +1,6 @@
+import { countryName, regionName } from "@/lib/geography";
+import Provenance, { statusName } from "@/components/Provenance";
+import SourceSelect from "@/components/SourceSelect";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { isLocale, dictionary } from "@/lib/i18n";
@@ -38,26 +41,51 @@ export default async function Rankings({
   const t = dictionary(lang);
   const query = await searchParams;
   const metric = metricOf(query.indicator),
-    year = integer(query.year, 2024, 1960, 2100),
     page = integer(query.page, 0, 0, 10000);
+  const source =
+    metric === "exports"
+      ? "worldbank"
+      : ["auto", "imf", "worldbank"].includes(query.source || "")
+        ? query.source!
+        : "auto";
+  let year = query.year
+    ? integer(query.year, new Date().getUTCFullYear(), 1960, 2100)
+    : undefined;
   let data: RankingPage | undefined;
   let years: number[] = [];
+  let checkedAt: string | undefined;
   try {
     [data, years] = await Promise.all([
       api<RankingPage>(
-        `/rankings?indicator=${metric}&year=${year}&page=${page}&size=25`,
+        `/rankings?indicator=${metric}&source=${source}${year ? `&year=${year}` : ""}&page=${page}&size=25`,
       ),
-      api<number[]>("/years"),
+      api<number[]>(`/years?indicator=${metric}&source=${source}`),
     ]);
+    year = data.year;
+    const status = await api<{
+      sources: { provider: string; checkedAt: string }[];
+    }>("/data/status");
+    checkedAt = status.sources.find(
+      (s) => s.provider === data?.provider,
+    )?.checkedAt;
   } catch {}
   const url = (p: number) =>
-    `/${lang}?indicator=${metric}&year=${year}&page=${p}#rankings`;
+    `/${lang}?indicator=${metric}&source=${source}&year=${year}&page=${p}#rankings`;
   return (
     <>
       <section className="hero">
         <div>
           <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{t.headline}</h1>
+          <h1>
+            {lang === "ko" ? (
+              <>
+                <span className="headline-line">세계 경제를 보는</span>
+                <span className="headline-line">더 선명한 시선.</span>
+              </>
+            ) : (
+              t.headline
+            )}
+          </h1>
           <p className="lead">{t.intro}</p>
           <div className="hero-actions">
             <a className="button" href="#rankings">
@@ -95,7 +123,15 @@ export default async function Rankings({
         <div>
           <span>{t.source}</span>
           <strong className="source-stat">
-            World Bank <small>WDI</small>
+            {data?.provider === "imf" ? (
+              <>
+                IMF <small>WEO</small>
+              </>
+            ) : (
+              <>
+                World Bank <small>WDI</small>
+              </>
+            )}
           </strong>
         </div>
       </section>
@@ -107,9 +143,12 @@ export default async function Rankings({
           </div>
           <form className="inline-form">
             <input type="hidden" name="indicator" value={metric} />
+            {metric !== "exports" && (
+              <SourceSelect source={source} lang={lang} />
+            )}
             <label htmlFor="year">{t.year}</label>
             <select id="year" name="year" defaultValue={year}>
-              {[...new Set([year, ...years])]
+              {[...new Set([...(year ? [year] : []), ...years])]
                 .sort((a, b) => b - a)
                 .map((y) => (
                   <option key={y}>{y}</option>
@@ -126,7 +165,7 @@ export default async function Rankings({
               key={m}
               className={m === metric ? "active" : ""}
               aria-current={m === metric ? "page" : undefined}
-              href={`/${lang}?indicator=${m}&year=${year}#rankings`}
+              href={`/${lang}?indicator=${m}&source=${m === "exports" ? "worldbank" : source}#rankings`}
             >
               {t[m]}
             </Link>
@@ -171,12 +210,19 @@ export default async function Rankings({
                         href={`/${lang}/countries/${row.code}`}
                       >
                         <span className="country-code">{row.code}</span>
-                        {row.name}
+                        {countryName(row.code, row.name, lang)}
                       </Link>
-                      <span className="region">{row.region}</span>
+                      <span className="region">
+                        {regionName(row.region, lang)}
+                      </span>
                     </td>
                     <td className="numeric" title={fullAmount(row.value, lang)}>
                       {amount(row.value, lang)}
+                      <small
+                        className={`value-status ${row.status === "ACTUAL" ? "actual" : "forecast"}`}
+                      >
+                        {statusName(row.status, lang)}
+                      </small>
                     </td>
                     <td className="bar-column">
                       <div className="bar-track">
@@ -214,27 +260,9 @@ export default async function Rankings({
             )}
           </div>
         )}
-        <div className="data-note">
-          <p>
-            {t.definition} {t.exportNote}
-          </p>
-          <p>
-            {t.source}:{" "}
-            <a
-              href={data?.items[0]?.sourceUrl || "https://data.worldbank.org"}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t.worldbank}
-            </a>
-            {data?.items[0] && (
-              <>
-                {" "}
-                · {t.retrieved}: {data.items[0].retrievedAt.slice(0, 10)}
-              </>
-            )}
-          </p>
-        </div>
+        {data && (
+          <Provenance items={data.items} lang={lang} checkedAt={checkedAt} />
+        )}
       </section>
       <section className="community-banner">
         <div>

@@ -1,3 +1,5 @@
+import { countryName, regionName } from "@/lib/geography";
+import Provenance, { statusName } from "@/components/Provenance";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -36,16 +38,16 @@ export default async function CountryPage({ params }: Props) {
       </p>
     );
   }
-  const years = [...new Set(data.observations.map((o) => o.year))].sort(
-    (a, b) => b - a,
-  );
+  const years = [...new Set(data.observations.map((o) => o.year))]
+    .filter((y) => y <= new Date().getUTCFullYear())
+    .sort((a, b) => b - a);
   return (
     <>
       <section className="page-heading">
         <p className="eyebrow">
-          {data.country.region} / {code}
+          {regionName(data.country.region, lang)} / {code}
         </p>
-        <h1>{data.country.name}</h1>
+        <h1>{countryName(code, data.country.name, lang)}</h1>
         <p className="lead">{t.countryTitle}</p>
         <div className="hero-actions">
           <Link
@@ -65,7 +67,7 @@ export default async function CountryPage({ params }: Props) {
       <section className="panel">
         <div className="section-head">
           <h2>{t.history}</h2>
-          <span>World Bank WDI</span>
+          <span>IMF WEO · World Bank WDI</span>
         </div>
         <div className="table-wrap">
           <table>
@@ -83,41 +85,30 @@ export default async function CountryPage({ params }: Props) {
               {years.map((y) => (
                 <tr key={y}>
                   <th scope="row">{y}</th>
-                  {metrics.map((m) => (
-                    <td className="numeric" key={m}>
-                      {amount(
-                        data.observations.find(
-                          (o) => o.year === y && o.indicator === m,
-                        )?.value,
-                        lang,
-                      )}
-                    </td>
-                  ))}
+                  {metrics.map((m) => {
+                    const item = data.observations.find(
+                      (o) => o.year === y && o.indicator === m,
+                    );
+                    return (
+                      <td className="numeric" key={m}>
+                        {amount(item?.value, lang)}
+                        {item && (
+                          <small
+                            className={`value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`}
+                          >
+                            {statusName(item.status, lang)}
+                          </small>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
-      <div className="data-note">
-        <p>{t.exportNote}</p>
-        <p>
-          {t.source}:{" "}
-          {metrics.map((m) => (
-            <a
-              key={m}
-              href={
-                data.observations.find((o) => o.indicator === m)?.sourceUrl ||
-                "https://data.worldbank.org"
-              }
-            >
-              {t[m]}{" "}
-            </a>
-          ))}{" "}
-          · {t.retrieved}:{" "}
-          {data.observations[0]?.retrievedAt.slice(0, 10) ?? "—"}
-        </p>
-      </div>
+      <Provenance items={data.observations} lang={lang} />
     </>
   );
 }
