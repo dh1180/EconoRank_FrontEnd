@@ -1,16 +1,17 @@
-import { countryName, regionName } from "@/lib/geography";
+import { countryName } from "@/lib/geography";
 import Provenance, { statusName } from "@/components/Provenance";
 import CountryFlag from "@/components/CountryFlag";
+import RankingsExplorer from "@/components/RankingsExplorer";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { isLocale, dictionary } from "@/lib/i18n";
 import {
   api,
   metricAmount,
-  fullAmount,
   integer,
   metricOf,
   metrics,
+  type Ranking,
   type RankingPage,
 } from "@/lib/api";
 import { notFound } from "next/navigation";
@@ -42,21 +43,28 @@ export default async function Rankings({
   if (!isLocale(lang)) notFound();
   const t = dictionary(lang);
   const query = await searchParams;
-  const metric = metricOf(query.indicator),
-    page = integer(query.page, 0, 0, 10000);
+  const metric = metricOf(query.indicator);
   let year = query.year
     ? integer(query.year, new Date().getUTCFullYear(), 1960, 2100)
     : undefined;
   let data: RankingPage | undefined;
+  let allItems: Ranking[] = [];
   let years: number[] = [];
   let checkedAt: string | undefined;
   try {
-    [data, years] = await Promise.all([
+    const yearParam = year ? `&year=${year}` : "";
+    const [page0, page1, fetchedYears] = await Promise.all([
       api<RankingPage>(
-        `/rankings?indicator=${metric}&source=imf${year ? `&year=${year}` : ""}&page=${page}&size=25`,
+        `/rankings?indicator=${metric}&source=imf${yearParam}&page=0&size=100`,
+      ),
+      api<RankingPage>(
+        `/rankings?indicator=${metric}&source=imf${yearParam}&page=1&size=100`,
       ),
       api<number[]>(`/years?indicator=${metric}&source=imf`),
     ]);
+    data = page0;
+    allItems = [...page0.items, ...page1.items];
+    years = fetchedYears;
     year = data.year;
     const status = await api<{
       sources: { provider: string; checkedAt: string }[];
@@ -64,10 +72,8 @@ export default async function Rankings({
     checkedAt = status.sources.find((s) => s.provider === "imf")?.checkedAt;
   } catch {}
 
-  const url = (p: number) =>
-    `/${lang}?indicator=${metric}&year=${year}&page=${p}#rankings`;
-  const topFive = data?.items.slice(0, 5) ?? [];
-  const topLeaderValue = data?.items[0]?.value ?? 1;
+  const topFive = allItems.slice(0, 5);
+  const topLeaderValue = allItems[0]?.value ?? 1;
   const unitLabel = metric === "ppp" ? "Int$" : "US$";
 
   return (
@@ -181,8 +187,8 @@ export default async function Rankings({
           <span className="stat-label">{t.year}</span>
           <strong className="stat-value">{year ?? "—"}</strong>
           <small className="stat-sub">
-            {data?.items[0]
-              ? statusName(data.items[0].status, lang)
+            {allItems[0]
+              ? statusName(allItems[0].status, lang)
               : lang === "ko"
                 ? "최신 제공 연도"
                 : "Latest available year"}
@@ -250,110 +256,14 @@ export default async function Rankings({
               {t.unavailable}
             </p>
           </div>
-        ) : data.items.length === 0 ? (
-          <div className="panel-pad">
-            <p className="notice">{t.empty}</p>
-          </div>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <caption className="sr-only">
-                {t[metric]} · {year}
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t.rank}</th>
-                  <th scope="col">{t.country}</th>
-                  <th scope="col" className="numeric">
-                    {t.value}{" "}
-                    <span className="muted">({unitLabel})</span>
-                  </th>
-                  <th scope="col" className="bar-column">
-                    <span className="sr-only">Relative value</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((row) => {
-                  const isTop3 = row.rank >= 1 && row.rank <= 3;
-                  const sharePct = Math.max(
-                    1,
-                    (row.value / topLeaderValue) * 100,
-                  );
-                  return (
-                    <tr key={row.code} className={isTop3 ? "top-row" : undefined}>
-                      <td className="rank-number">
-                        <span
-                          className={
-                            isTop3
-                              ? `rank-medal rank-medal-${row.rank}`
-                              : "rank-plain"
-                          }
-                        >
-                          {row.rank.toString().padStart(2, "0")}
-                        </span>
-                      </td>
-                      <td>
-                        <Link
-                          className="country-name"
-                          href={`/${lang}/countries/${row.code}`}
-                        >
-                          <CountryFlag code={row.code} size="md" />
-                          <span className="country-code">{row.code}</span>
-                          <span className="country-meta">
-                            <span className="country-label">
-                              {countryName(row.code, row.name, lang)}
-                            </span>
-                            <span className="region">
-                              {regionName(row.region, lang)}
-                            </span>
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="numeric" title={fullAmount(row.value, lang)}>
-                        <span className="amount-val">
-                          {metricAmount(row.value, metric, lang)}
-                        </span>
-                        <small
-                          className={`value-status ${row.status === "ACTUAL" ? "actual" : "forecast"}`}
-                        >
-                          {statusName(row.status, lang)}
-                        </small>
-                      </td>
-                      <td className="bar-column">
-                        <div className="bar-track">
-                          <div style={{ width: `${sharePct}%` }} />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {data && data.total > 25 && (
-          <div className="pagination">
-            {page > 0 ? (
-              <Link className="small-button" href={url(page - 1)}>
-                ← {t.previous}
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className="page-indicator">
-              <strong>{page + 1}</strong> /{" "}
-              {Math.max(1, Math.ceil(data.total / 25))}
-            </span>
-            {(page + 1) * 25 < data.total ? (
-              <Link className="small-button" href={url(page + 1)}>
-                {t.next} →
-              </Link>
-            ) : (
-              <span />
-            )}
-          </div>
+          <RankingsExplorer
+            key={`${metric}-${year}-${lang}`}
+            items={allItems}
+            metric={metric}
+            year={year ?? new Date().getUTCFullYear()}
+            lang={lang}
+          />
         )}
 
         {data && (

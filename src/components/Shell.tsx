@@ -2,6 +2,7 @@ import Link from "next/link";
 import { dictionary, type Locale } from "@/lib/i18n";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NavLinks from "./NavLinks";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Shell({
   lang,
@@ -44,7 +45,10 @@ export default function Shell({
               community: t.community,
             }}
           />
-          <LanguageSwitcher lang={lang} />
+          <div className="header-controls">
+            <ThemeToggle />
+            <LanguageSwitcher lang={lang} />
+          </div>
         </div>
       </header>
       <main id="main" className="container main-content">

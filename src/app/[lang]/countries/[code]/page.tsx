@@ -1,6 +1,7 @@
 import { countryName, regionName } from "@/lib/geography";
 import Provenance, { statusName } from "@/components/Provenance";
 import CountryFlag from "@/components/CountryFlag";
+import CountryTrendChart from "@/components/CountryTrendChart";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -146,6 +147,8 @@ export default async function CountryPage({ params }: Props) {
           </div>
         ))}
       </section>
+
+      <CountryTrendChart observations={data.observations} lang={lang} />
 
       <section className="panel">
         <div className="section-head">

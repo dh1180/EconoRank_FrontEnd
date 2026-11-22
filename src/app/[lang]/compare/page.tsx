@@ -78,6 +78,15 @@ export default async function Compare({
     .map((code) => countries.find((c) => c.code === code))
     .filter((c): c is Country => !!c);
 
+  const presets: { label: string; koLabel: string; codes: string[] }[] = [
+    { label: "Top 5 Economies", koLabel: "세계 Top 5", codes: ["USA", "CHN", "DEU", "JPN", "IND"] },
+    { label: "KR · US · JP · CN", koLabel: "한·미·일·중", codes: ["KOR", "USA", "JPN", "CHN"] },
+    { label: "EU Big 4", koLabel: "유럽 주요 4개국", codes: ["DEU", "FRA", "ITA", "ESP"] },
+    { label: "Nordics", koLabel: "북유럽 4개국", codes: ["NOR", "SWE", "DNK", "FIN"] },
+    { label: "ASEAN Top 4", koLabel: "아세안 주요 4개국", codes: ["IDN", "SGP", "THA", "VNM"] },
+    { label: "BRICS", koLabel: "BRICS 5개국", codes: ["CHN", "IND", "BRA", "RUS", "ZAF"] },
+  ];
+
   return (
     <>
       <section className="page-heading">
@@ -86,6 +95,26 @@ export default async function Compare({
         </p>
         <h1>{t.compareTitle}</h1>
         <p className="lead">{t.compareIntro}</p>
+        <div className="preset-bar" aria-label={lang === "ko" ? "빠른 비교 프리셋" : "Quick comparison presets"}>
+          <span className="preset-label">
+            {lang === "ko" ? "빠른 프리셋" : "Quick presets"}
+          </span>
+          {presets.map((p) => {
+            const qs = p.codes.map((c) => `country=${c}`).join("&");
+            const active =
+              p.codes.length === selected.length &&
+              p.codes.every((c) => selected.includes(c));
+            return (
+              <Link
+                key={p.label}
+                href={`/${lang}/compare?${qs}${year ? `&year=${year}` : ""}`}
+                className={`preset-pill ${active ? "active" : ""}`}
+              >
+                {lang === "ko" ? p.koLabel : p.label}
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       <div className="compare-layout">
