@@ -202,8 +202,8 @@ export default async function Rankings({
           <small className="stat-sub stat-live">
             <span className="sync-dot" aria-hidden="true" />
             {lang === "ko"
-              ? "6시간마다 IMF 공식 발표 자동 확인"
-              : "IMF WEO auto-checked every 6 hours"}
+              ? "매일 1회 IMF 공식 발표 자동 확인"
+              : "IMF WEO auto-checked daily"}
           </small>
         </div>
       </section>

@@ -31,6 +31,7 @@ export type Company = {
   priceUsd: number;
   country: string;
   countryCode: string;
+  exchange: string;
 };
 export type CompanyFeed = {
   items: Company[];

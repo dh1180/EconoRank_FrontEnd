@@ -52,7 +52,7 @@ export default function Provenance({
         <div className="sync-pill">
           <span className="sync-dot" aria-hidden="true" />
           <span>
-            {lang === "ko" ? "6시간마다 자동 확인" : "Auto-sync every 6h"}
+            {lang === "ko" ? "매일 1회 자동 확인" : "Daily auto-sync"}
           </span>
         </div>
       </div>

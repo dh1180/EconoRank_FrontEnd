@@ -5,6 +5,7 @@ import { api, amount, type CompanyFeed } from "@/lib/api";
 import { countryName } from "@/lib/geography";
 import { dictionary, isLocale } from "@/lib/i18n";
 import CountryFlag from "@/components/CountryFlag";
+import CompanyLogo from "@/components/CompanyLogo";
 import CompaniesExplorer from "@/components/CompaniesExplorer";
 
 export async function generateMetadata({
@@ -36,7 +37,7 @@ export default async function CompaniesPage({
 
   let feed: CompanyFeed | undefined;
   try {
-    feed = await api<CompanyFeed>("/companies?limit=250");
+    feed = await api<CompanyFeed>("/companies?limit=1000");
   } catch {}
 
   const topFive = feed?.items.slice(0, 5) ?? [];
@@ -52,8 +53,8 @@ export default async function CompaniesPage({
             <span className="sync-dot" aria-hidden="true" />
             <span>
               {lang === "ko"
-                ? "실시간 글로벌 시가총액 · 5분 자동 갱신"
-                : "LIVE GLOBAL MARKET CAP · 5M AUTO-SYNC"}
+                ? "실시간 글로벌 시가총액 · 국가 거래소별 순위"
+                : "LIVE GLOBAL MARKET CAP · BY STOCK EXCHANGE"}
             </span>
           </div>
           <h1>
@@ -109,9 +110,7 @@ export default async function CompaniesPage({
                           <span className={`snapshot-rank rank-${c.rank}`}>
                             {c.rank.toString().padStart(2, "0")}
                           </span>
-                          {c.countryCode && (
-                            <CountryFlag code={c.countryCode} size="sm" />
-                          )}
+                          <CompanyLogo symbol={c.symbol} name={c.name} size="sm" />
                           <span className="snapshot-code">{c.symbol}</span>
                           <span className="snapshot-name">{c.name}</span>
                         </span>
