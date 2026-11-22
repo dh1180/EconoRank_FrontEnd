@@ -198,7 +198,54 @@ export default function Community({
     ),
     [reports, setReports] = useState<Report[]>([]),
     [admin, setAdmin] = useState(false);
+  const [translations, setTranslations] = useState<
+    Record<string, { title?: string | null; body: string; show: boolean; provider?: string }>
+  >({});
+  const [translatingKey, setTranslatingKey] = useState<string | null>(null);
+  const [translateError, setTranslateError] = useState<Record<string, string>>({});
   const contentTopRef = useRef<HTMLElement>(null);
+
+  async function toggleTranslate(type: "post" | "comment", id: string) {
+    const key = `${type}:${id}:${lang}`;
+    const existing = translations[key];
+    if (existing) {
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: { ...existing, show: !existing.show },
+      }));
+      return;
+    }
+    if (translatingKey === key) return;
+    setTranslatingKey(key);
+    setTranslateError((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    try {
+      const data = await read<{
+        title?: string | null;
+        body: string;
+        provider?: string;
+      }>(`/${type === "post" ? "posts" : "comments"}/${encodeURIComponent(id)}/translate?target=${encodeURIComponent(lang)}`);
+      setTranslations((prev) => ({
+        ...prev,
+        [key]: {
+          title: data.title,
+          body: data.body,
+          show: true,
+          provider: data.provider,
+        },
+      }));
+    } catch (e) {
+      setTranslateError((prev) => ({
+        ...prev,
+        [key]: e instanceof Error ? e.message : "Translation failed",
+      }));
+    } finally {
+      setTranslatingKey(null);
+    }
+  }
 
   const vpnNoticeTitle = t.vpnTitle;
   const vpnNoticeBody = t.vpnBody;
@@ -762,41 +809,96 @@ export default function Community({
               <p role="status">{t.loading}</p>
             ) : selected && thread ? (
               <>
-                <article className="panel thread">
-                  <div className="post-meta post-meta-row">
-                    <AuthorTag
-                      name={thread.post.author}
-                      countryCode={thread.post.authorCountry}
-                      anonymous={thread.post.anonymous}
-                      lang={lang}
-                    />
-                    <span>
-                      · {new Date(thread.post.createdAt).toLocaleDateString(lang)}
-                    </span>
-                  </div>
-                  <h2>{thread.post.title}</h2>
-                  <StatText text={thread.post.body} lang={lang} />
-                  {actions("post", thread.post)}
-                </article>
-                <section className="panel replies">
-                  <h3>{t.reply}</h3>
-                  {thread.comments.map((c) => (
-                    <article key={c.id}>
+                {(() => {
+                  const pKey = `post:${thread.post.id}:${lang}`;
+                  const tr = translations[pKey];
+                  const showingTr = Boolean(tr?.show);
+                  const trErr = translateError[pKey];
+                  return (
+                    <article className="panel thread">
                       <div className="post-meta post-meta-row">
                         <AuthorTag
-                          name={c.author}
-                          countryCode={c.authorCountry}
-                          anonymous={c.anonymous}
+                          name={thread.post.author}
+                          countryCode={thread.post.authorCountry}
+                          anonymous={thread.post.anonymous}
                           lang={lang}
                         />
                         <span>
-                          · {new Date(c.createdAt).toLocaleDateString(lang)}
+                          · {new Date(thread.post.createdAt).toLocaleDateString(lang)}
                         </span>
+                        {showingTr && (
+                          <span className="translated-badge">{t.translatedTag}</span>
+                        )}
                       </div>
-                      <StatText text={c.body} lang={lang} />
-                      {actions("comment", c)}
+                      <h2>{showingTr && tr?.title ? tr.title : thread.post.title}</h2>
+                      <StatText
+                        text={showingTr && tr ? tr.body : thread.post.body}
+                        lang={lang}
+                      />
+                      <div className="translate-bar">
+                        <button
+                          type="button"
+                          className="translate-btn"
+                          disabled={translatingKey === pKey}
+                          onClick={() => toggleTranslate("post", thread.post.id)}
+                        >
+                          🌐{" "}
+                          {translatingKey === pKey
+                            ? t.translating
+                            : showingTr
+                              ? t.showOriginal
+                              : t.translateBtn}
+                        </button>
+                        {trErr && <span className="translate-error">{trErr}</span>}
+                      </div>
+                      {actions("post", thread.post)}
                     </article>
-                  ))}
+                  );
+                })()}
+                <section className="panel replies">
+                  <h3>{t.reply}</h3>
+                  {thread.comments.map((c) => {
+                    const cKey = `comment:${c.id}:${lang}`;
+                    const tr = translations[cKey];
+                    const showingTr = Boolean(tr?.show);
+                    const trErr = translateError[cKey];
+                    return (
+                      <article key={c.id}>
+                        <div className="post-meta post-meta-row">
+                          <AuthorTag
+                            name={c.author}
+                            countryCode={c.authorCountry}
+                            anonymous={c.anonymous}
+                            lang={lang}
+                          />
+                          <span>
+                            · {new Date(c.createdAt).toLocaleDateString(lang)}
+                          </span>
+                          {showingTr && (
+                            <span className="translated-badge">{t.translatedTag}</span>
+                          )}
+                        </div>
+                        <StatText text={showingTr && tr ? tr.body : c.body} lang={lang} />
+                        <div className="translate-bar">
+                          <button
+                            type="button"
+                            className="translate-btn"
+                            disabled={translatingKey === cKey}
+                            onClick={() => toggleTranslate("comment", c.id)}
+                          >
+                            🌐{" "}
+                            {translatingKey === cKey
+                              ? t.translating
+                              : showingTr
+                                ? t.showOriginal
+                                : t.translateBtn}
+                          </button>
+                          {trErr && <span className="translate-error">{trErr}</span>}
+                        </div>
+                        {actions("comment", c)}
+                      </article>
+                    );
+                  })}
                   <p className="muted">{t.commentsLimit}</p>
                   <form
                     className="editor"
@@ -880,45 +982,79 @@ export default function Community({
                     {feed.items.length === 0 ? (
                       <p className="panel editor">{t.noPosts}</p>
                     ) : (
-                      feed.items.map((p) => (
-                        <article
-                          className="panel post-card post-card-clickable"
-                          key={p.id}
-                          onClick={(e) => {
-                            if (window.getSelection()?.toString()) return;
-                            if ((e.target as HTMLElement).closest("button, a")) return;
-                            openPost(p.id);
-                          }}
-                        >
-                          <div className="post-meta post-meta-row">
-                            <AuthorTag
-                              name={p.author}
-                              countryCode={p.authorCountry}
-                              anonymous={p.anonymous}
-                              lang={lang}
-                            />
-                            <span>
-                              · {new Date(p.createdAt).toLocaleDateString(lang)} ·{" "}
-                              {p.language.toUpperCase()}
-                            </span>
-                          </div>
-                          <h3>
-                            <button
-                              type="button"
-                              className="post-title"
-                              onClick={() => openPost(p.id)}
-                            >
-                              {p.title}
-                            </button>
-                          </h3>
-                          <p className="post-excerpt">
-                            {p.body
-                              .replace(/\[\[stat:[^\]]+\]\]/g, t.statCardTag)
-                              .slice(0, 180)}
-                          </p>
-                          {actions("post", p)}
-                        </article>
-                      ))
+                      feed.items.map((p) => {
+                        const pKey = `post:${p.id}:${lang}`;
+                        const tr = translations[pKey];
+                        const showingTr = Boolean(tr?.show);
+                        const trErr = translateError[pKey];
+                        const displayTitle = showingTr && tr?.title ? tr.title : p.title;
+                        const displayBody = showingTr && tr ? tr.body : p.body;
+                        return (
+                          <article
+                            className="panel post-card post-card-clickable"
+                            key={p.id}
+                            onClick={(e) => {
+                              if (window.getSelection()?.toString()) return;
+                              if ((e.target as HTMLElement).closest("button, a")) return;
+                              openPost(p.id);
+                            }}
+                          >
+                            <div className="post-meta post-meta-row">
+                              <AuthorTag
+                                name={p.author}
+                                countryCode={p.authorCountry}
+                                anonymous={p.anonymous}
+                                lang={lang}
+                              />
+                              <span>
+                                · {new Date(p.createdAt).toLocaleDateString(lang)} ·{" "}
+                                {p.language.toUpperCase()}
+                              </span>
+                              {showingTr && (
+                                <span className="translated-badge">{t.translatedTag}</span>
+                              )}
+                            </div>
+                            <h3>
+                              <button
+                                type="button"
+                                className="post-title"
+                                onClick={() => openPost(p.id)}
+                              >
+                                {displayTitle}
+                              </button>
+                            </h3>
+                            <p className="post-excerpt">
+                              {displayBody
+                                .replace(/\[\[stat:[^\]]+\]\]/g, t.statCardTag)
+                                .slice(0, 180)}
+                            </p>
+                            {p.language !== lang && (
+                              <div
+                                className="translate-bar"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  className="translate-btn"
+                                  disabled={translatingKey === pKey}
+                                  onClick={() => toggleTranslate("post", p.id)}
+                                >
+                                  🌐{" "}
+                                  {translatingKey === pKey
+                                    ? t.translating
+                                    : showingTr
+                                      ? t.showOriginal
+                                      : t.translateBtn}
+                                </button>
+                                {trErr && (
+                                  <span className="translate-error">{trErr}</span>
+                                )}
+                              </div>
+                            )}
+                            {actions("post", p)}
+                          </article>
+                        );
+                      })
                     )}
                   </div>
                   <div className="pagination">
