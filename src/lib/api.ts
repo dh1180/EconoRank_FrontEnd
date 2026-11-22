@@ -32,6 +32,7 @@ export type Company = {
   country: string;
   countryCode: string;
   exchange: string;
+  region?: string;
 };
 export type ExchangeSummary = {
   code: string;
@@ -43,6 +44,7 @@ export type CompanyFeed = {
   total: number;
   exchangeTotal?: number;
   exchanges?: ExchangeSummary[];
+  regions?: ExchangeSummary[];
   updatedAt: string;
   refreshIntervalMinutes: number;
   source: string;

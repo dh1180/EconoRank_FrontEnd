@@ -112,7 +112,23 @@ const EXCHANGE_FLAGS: Record<string, string> = {
   BYMA: "ARG",
 };
 
+const REGION_LABELS: Record<string, { ko: string; en: string }> = {
+  NORTH_AMERICA: { ko: "북미", en: "North America" },
+  ASIA: { ko: "아시아", en: "Asia" },
+  EUROPE: { ko: "유럽", en: "Europe" },
+  MIDDLE_EAST: { ko: "중동", en: "Middle East" },
+  OCEANIA: { ko: "오세아니아", en: "Oceania" },
+  LATIN_AMERICA: { ko: "중남미", en: "Latin America" },
+  AFRICA: { ko: "아프리카", en: "Africa" },
+};
+
 const PAGE_SIZE = 25;
+
+function regionLabel(code: string, lang: string) {
+  const entry = REGION_LABELS[code];
+  if (!entry) return code;
+  return lang === "ko" ? entry.ko : entry.en;
+}
 
 function exchangeLabel(code: string, lang: string) {
   if (lang === "ko") return EXCHANGE_LABELS_KO[code] || code;
@@ -142,33 +158,45 @@ export default function CompaniesExplorer({
   const t = dictionary(lang);
   const [feed, setFeed] = useState<CompanyFeed>(initialFeed);
   const [query, setQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState<string>("ALL");
   const [exchangeFilter, setExchangeFilter] = useState<string>("ALL");
   const [countryFilter, setCountryFilter] = useState<string>("ALL");
   const [page, setPage] = useState(0);
   const [loadingExchange, setLoadingExchange] = useState(false);
   const [showAllExchanges, setShowAllExchanges] = useState(false);
   const cacheRef = useRef<Map<string, CompanyFeed>>(
-    new Map([["ALL", initialFeed]]),
+    new Map([["ALL|ALL", initialFeed]]),
   );
 
-  async function selectExchange(nextExchange: string, force = false) {
+  async function selectScope(
+    nextRegion: string,
+    nextExchange: string,
+    force = false,
+  ) {
+    setRegionFilter(nextRegion);
     setExchangeFilter(nextExchange);
     setCountryFilter("ALL");
     setPage(0);
-    if (!force && cacheRef.current.has(nextExchange)) {
-      setFeed(cacheRef.current.get(nextExchange)!);
+    const cacheKey = `${nextRegion}|${nextExchange}`;
+    if (!force && cacheRef.current.has(cacheKey)) {
+      setFeed(cacheRef.current.get(cacheKey)!);
       return;
     }
     setLoadingExchange(true);
     try {
-      const url =
-        nextExchange === "ALL"
-          ? "/api/companies?limit=250"
-          : `/api/companies?exchange=${encodeURIComponent(nextExchange)}&limit=100`;
-      const res = await fetch(url, { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (nextRegion !== "ALL") params.set("region", nextRegion);
+      if (nextExchange !== "ALL") params.set("exchange", nextExchange);
+      params.set(
+        "limit",
+        nextRegion === "ALL" && nextExchange === "ALL" ? "250" : "100",
+      );
+      const res = await fetch(`/api/companies?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (res.ok) {
         const next = (await res.json()) as CompanyFeed;
-        cacheRef.current.set(nextExchange, next);
+        cacheRef.current.set(cacheKey, next);
         setFeed(next);
       }
     } catch {
@@ -178,6 +206,7 @@ export default function CompaniesExplorer({
   }
 
   const items = feed.items;
+  const regions = feed.regions ?? initialFeed.regions ?? [];
   const exchanges = feed.exchanges ?? initialFeed.exchanges ?? [];
   const visibleExchanges = showAllExchanges ? exchanges : exchanges.slice(0, 14);
 
@@ -236,7 +265,7 @@ export default function CompaniesExplorer({
     safePage * PAGE_SIZE,
     safePage * PAGE_SIZE + PAGE_SIZE,
   );
-  const isExchangeView = exchangeFilter !== "ALL";
+  const isScopedView = exchangeFilter !== "ALL" || regionFilter !== "ALL";
 
   function exportCsv() {
     const header = [
@@ -266,13 +295,66 @@ export default function CompaniesExplorer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `statagora-companies-${exchangeFilter === "ALL" ? "global" : exchangeFilter.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
+    const scopeSlug =
+      exchangeFilter !== "ALL"
+        ? exchangeFilter
+        : regionFilter !== "ALL"
+          ? regionFilter
+          : "global";
+    a.download = `statagora-companies-${scopeSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return (
     <>
+      {regions.length > 0 && (
+        <div
+          className="exchange-bar"
+          role="region"
+          aria-label={
+            lang === "ko" ? "권역별 시가총액 순위" : "Market cap rankings by region"
+          }
+        >
+          <div className="exchange-bar-head">
+            <span className="region-share-title">
+              {lang === "ko"
+                ? "권역별 시가총액 순위 (북미 · 아시아 · 유럽 등 각 Top 100)"
+                : "Rankings by Region (North America · Asia · Europe · Top 100 each)"}
+            </span>
+            {regionFilter !== "ALL" && (
+              <span className="exchange-active-note mono">
+                {regionLabel(regionFilter, lang)} · Top {items.length} /{" "}
+                {feed.exchangeTotal ?? items.length}
+              </span>
+            )}
+          </div>
+          <div className="exchange-pills">
+            <button
+              type="button"
+              className={`exchange-pill ${regionFilter === "ALL" && exchangeFilter === "ALL" ? "active" : ""}`}
+              onClick={() => selectScope("ALL", "ALL")}
+            >
+              <span>{lang === "ko" ? "전체 글로벌 Top 250" : "Global Top 250"}</span>
+              <small className="mono">{feed.total.toLocaleString()}</small>
+            </button>
+            {regions.map((r) => (
+              <button
+                key={r.code}
+                type="button"
+                className={`exchange-pill ${regionFilter === r.code ? "active" : ""}`}
+                onClick={() =>
+                  selectScope(regionFilter === r.code ? "ALL" : r.code, "ALL")
+                }
+              >
+                <span>{regionLabel(r.code, lang)}</span>
+                <small className="mono">{r.count.toLocaleString()}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {exchanges.length > 0 && (
         <div
           className="exchange-bar"
@@ -287,7 +369,7 @@ export default function CompaniesExplorer({
                 ? `국가 거래소별 주식 순위 (${exchanges.length}개 거래소 · 각 Top 100)`
                 : `Stock Rankings by Exchange (${exchanges.length} exchanges · Top 100 each)`}
             </span>
-            {isExchangeView && (
+            {exchangeFilter !== "ALL" && (
               <span className="exchange-active-note mono">
                 {exchangeLabel(exchangeFilter, lang)} · Top {items.length} /{" "}
                 {feed.exchangeTotal ?? items.length}
@@ -295,14 +377,6 @@ export default function CompaniesExplorer({
             )}
           </div>
           <div className="exchange-pills">
-            <button
-              type="button"
-              className={`exchange-pill ${exchangeFilter === "ALL" ? "active" : ""}`}
-              onClick={() => selectExchange("ALL")}
-            >
-              <span>{lang === "ko" ? "전체 글로벌 Top 250" : "Global Top 250"}</span>
-              <small className="mono">{feed.total.toLocaleString()}</small>
-            </button>
             {visibleExchanges.map((ex) => {
               const flagCode = EXCHANGE_FLAGS[ex.code];
               return (
@@ -311,7 +385,10 @@ export default function CompaniesExplorer({
                   type="button"
                   className={`exchange-pill ${exchangeFilter === ex.code ? "active" : ""}`}
                   onClick={() =>
-                    selectExchange(exchangeFilter === ex.code ? "ALL" : ex.code)
+                    selectScope(
+                      "ALL",
+                      exchangeFilter === ex.code ? "ALL" : ex.code,
+                    )
                   }
                 >
                   {flagCode && <CountryFlag code={flagCode} size="sm" />}
@@ -339,7 +416,7 @@ export default function CompaniesExplorer({
         </div>
       )}
 
-      {!isExchangeView && topCountries.length > 0 && totalCap > 0 && (
+      {!isScopedView && topCountries.length > 0 && totalCap > 0 && (
         <div className="region-share-box">
           <div className="region-share-head">
             <span className="region-share-title">
@@ -453,7 +530,7 @@ export default function CompaniesExplorer({
             type="button"
             className="small-button csv-btn"
             disabled={loadingExchange}
-            onClick={() => selectExchange(exchangeFilter, true)}
+            onClick={() => selectScope(regionFilter, exchangeFilter, true)}
           >
             {loadingExchange
               ? lang === "ko"
@@ -516,7 +593,7 @@ export default function CompaniesExplorer({
             </thead>
             <tbody>
               {pageItems.map((c, idx) => {
-                const displayRank = isExchangeView
+                const displayRank = isScopedView
                   ? safePage * PAGE_SIZE + idx + 1
                   : c.rank;
                 const isTop3 = displayRank >= 1 && displayRank <= 3;
@@ -540,7 +617,7 @@ export default function CompaniesExplorer({
                       >
                         {displayRank.toString().padStart(2, "0")}
                       </span>
-                      {isExchangeView && (
+                      {isScopedView && (
                         <small className="global-rank-sub mono">
                           #{c.rank}
                         </small>
