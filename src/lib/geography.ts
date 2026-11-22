@@ -1,7 +1,20 @@
 import countries from "i18n-iso-countries";
 import korean from "i18n-iso-countries/langs/ko.json" with { type: "json" };
+
 countries.registerLocale(korean);
-const common: Record<string, string> = {
+
+const EXTRA_ALPHA2: Record<string, string> = {
+  XKX: "XK",
+  KOS: "XK",
+  PSE: "PS",
+  WBG: "PS",
+  TWN: "TW",
+  HKG: "HK",
+  MAC: "MO",
+  CHI: "JE",
+};
+
+const commonKo: Record<string, string> = {
   POL: "폴란드",
   TUR: "튀르키예",
   SWZ: "에스와티니",
@@ -27,12 +40,37 @@ const common: Record<string, string> = {
   TWN: "대만",
   NRU: "나우루",
 };
-export function countryName(code: string, name: string, lang: string) {
-  return lang === "ko"
-    ? common[code] || countries.getName(code, "ko") || name
-    : name;
+
+const displayNameCache = new Map<string, Intl.DisplayNames | null>();
+
+function getDisplayNames(lang: string): Intl.DisplayNames | null {
+  if (displayNameCache.has(lang)) return displayNameCache.get(lang) ?? null;
+  try {
+    const dn = new Intl.DisplayNames([lang], { type: "region" });
+    displayNameCache.set(lang, dn);
+    return dn;
+  } catch {
+    displayNameCache.set(lang, null);
+    return null;
+  }
 }
-const regions: Record<string, string> = {
+
+export function countryName(code: string, name: string, lang: string) {
+  if (lang === "en") return name;
+  if (lang === "ko") {
+    return commonKo[code] || countries.getName(code, "ko") || name;
+  }
+  const upper = code.toUpperCase();
+  const alpha2 = EXTRA_ALPHA2[upper] || countries.alpha3ToAlpha2(upper);
+  if (alpha2) {
+    const dn = getDisplayNames(lang);
+    const localized = dn?.of(alpha2);
+    if (localized && localized !== alpha2) return localized;
+  }
+  return name;
+}
+
+const regionsKo: Record<string, string> = {
   "North America": "북아메리카",
   "East Asia & Pacific": "동아시아·태평양",
   "Europe & Central Asia": "유럽·중앙아시아",
@@ -44,6 +82,7 @@ const regions: Record<string, string> = {
   "Middle East & North Africa": "중동·북아프리카",
   "Other economies": "기타 경제권",
 };
+
 export function regionName(region: string, lang: string) {
-  return lang === "ko" ? regions[region.trim()] || region.trim() : region;
+  return lang === "ko" ? regionsKo[region.trim()] || region.trim() : region;
 }

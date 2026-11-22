@@ -47,12 +47,24 @@ export async function api<T>(path: string): Promise<T> {
   if (!response.ok) throw new Error(`API returned ${response.status}`);
   return response.json() as Promise<T>;
 }
+function numberLocale(locale: string) {
+  if (locale === "ko") return "ko-KR";
+  if (locale === "en") return "en-US";
+  return locale;
+}
 export function amount(value: number | undefined, locale: string) {
   if (value === undefined || !Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(value);
+  try {
+    return new Intl.NumberFormat(numberLocale(locale), {
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
 }
 export function metricAmount(
   value: number | undefined,
@@ -61,16 +73,28 @@ export function metricAmount(
 ) {
   if (value === undefined || !Number.isFinite(value)) return "—";
   if (metric === "gdppc") {
-    return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
-      maximumFractionDigits: 0,
-    }).format(value);
+    try {
+      return new Intl.NumberFormat(numberLocale(locale), {
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      return new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
   }
   return amount(value, locale);
 }
 export function fullAmount(value: number, locale: string) {
-  return new Intl.NumberFormat(locale === "ko" ? "ko-KR" : "en-US", {
-    maximumFractionDigits: 0,
-  }).format(value);
+  try {
+    return new Intl.NumberFormat(numberLocale(locale), {
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
 }
 export function comparisonCodes(values: string[]) {
   return [...new Set(values)].filter((c) => /^[A-Z]{3}$/.test(c));

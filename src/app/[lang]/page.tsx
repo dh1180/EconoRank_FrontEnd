@@ -84,11 +84,13 @@ export default async function Rankings({
                 <span className="headline-line">세계 경제를 보는</span>
                 <span className="headline-line hero-accent">더 선명한 시선.</span>
               </>
-            ) : (
+            ) : lang === "en" ? (
               <>
                 A clearer view of the{" "}
                 <em className="hero-serif">global economy.</em>
               </>
+            ) : (
+              t.headline
             )}
           </h1>
           <p className="lead">{t.intro}</p>

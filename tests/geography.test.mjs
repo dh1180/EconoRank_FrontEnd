@@ -16,3 +16,9 @@ test("Korean display names cover countries, special economies and regions", () =
 test("English display preserves publisher names", () => {
   assert.equal(countryName("KOR", "Korea, Rep.", "en"), "Korea, Rep.");
 });
+test("World languages localize country names via Intl.DisplayNames", () => {
+  assert.notEqual(countryName("USA", "United States", "ja"), "United States");
+  assert.notEqual(countryName("KOR", "Korea, Rep.", "ja"), "Korea, Rep.");
+  assert.notEqual(countryName("DEU", "Germany", "fr"), "Germany");
+  assert.notEqual(countryName("JPN", "Japan", "ar"), "Japan");
+});
