@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { countryName } from "@/lib/geography";
 import { dictionary, type Locale } from "@/lib/i18n";
 import type { Country } from "@/lib/api";
@@ -101,6 +101,7 @@ export default function Community({
     ),
     [reports, setReports] = useState<Report[]>([]),
     [admin, setAdmin] = useState(false);
+  const contentTopRef = useRef<HTMLElement>(null);
   useEffect(() => {
     read<Member>("/auth/me")
       .then(setMember)
@@ -169,6 +170,7 @@ export default function Community({
     if (id) url.searchParams.set("post", id);
     else url.searchParams.delete("post");
     window.history.replaceState(null, "", url);
+    contentTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   async function authenticate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -329,7 +331,7 @@ export default function Community({
           </section>
         )}
       </aside>
-      <section className="discussion-content">
+      <section className="discussion-content" ref={contentTopRef}>
         {error && (
           <p className="notice error" role="alert">
             {error}

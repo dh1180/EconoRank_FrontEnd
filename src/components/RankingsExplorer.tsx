@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { countryName, regionName } from "@/lib/geography";
 import { metricAmount, fullAmount, type Metric, type Ranking } from "@/lib/api";
@@ -37,6 +37,12 @@ export default function RankingsExplorer({
   const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
   const [page, setPage] = useState(0);
   const [compareList, setCompareList] = useState<string[]>([]);
+  const tableTopRef = useRef<HTMLDivElement>(null);
+
+  function goToPage(nextPage: number) {
+    setPage(nextPage);
+    tableTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const unitLabel = metric === "ppp" ? "Int$" : "US$";
   const topLeaderValue = items[0]?.value ?? 1;
@@ -199,7 +205,7 @@ export default function RankingsExplorer({
         </div>
       )}
 
-      <div className="explorer-toolbar">
+      <div className="explorer-toolbar" ref={tableTopRef}>
         <div className="explorer-search-wrap">
           <svg
             width="15"
@@ -402,7 +408,7 @@ export default function RankingsExplorer({
             type="button"
             className="small-button"
             disabled={safePage === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => goToPage(Math.max(0, safePage - 1))}
           >
             ← {t.previous}
           </button>
@@ -413,7 +419,7 @@ export default function RankingsExplorer({
             type="button"
             className="small-button"
             disabled={safePage + 1 >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => goToPage(Math.min(totalPages - 1, safePage + 1))}
           >
             {t.next} →
           </button>

@@ -112,6 +112,7 @@ function SwitcherInner({ lang }: { lang: Locale }) {
                     key={`pop-${l.code}`}
                     href={hrefFor(l.code)}
                     hrefLang={l.code}
+                    scroll={false}
                     className={`lang-item ${l.code === lang ? "active" : ""}`}
                     aria-current={l.code === lang ? "true" : undefined}
                     onClick={() => {
@@ -144,6 +145,7 @@ function SwitcherInner({ lang }: { lang: Locale }) {
                   key={l.code}
                   href={hrefFor(l.code)}
                   hrefLang={l.code}
+                  scroll={false}
                   className={`lang-item ${l.code === lang ? "active" : ""}`}
                   aria-current={l.code === lang ? "true" : undefined}
                   onClick={() => {

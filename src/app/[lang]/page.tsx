@@ -2,6 +2,7 @@ import { countryName } from "@/lib/geography";
 import Provenance, { statusName } from "@/components/Provenance";
 import CountryFlag from "@/components/CountryFlag";
 import RankingsExplorer from "@/components/RankingsExplorer";
+import YearSelect from "@/components/YearSelect";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { isLocale, dictionary } from "@/lib/i18n";
@@ -214,20 +215,7 @@ export default async function Rankings({
             <p className="eyebrow">ECONOMIC EXPLORER · IMF WEO</p>
             <h2>{t.rankings}</h2>
           </div>
-          <form className="inline-form">
-            <input type="hidden" name="indicator" value={metric} />
-            <label htmlFor="year">{t.year}</label>
-            <select id="year" name="year" defaultValue={year}>
-              {[...new Set([...(year ? [year] : []), ...years])]
-                .sort((a, b) => b - a)
-                .map((y) => (
-                  <option key={y}>{y}</option>
-                ))}
-            </select>
-            <button className="small-button" type="submit">
-              {t.refresh}
-            </button>
-          </form>
+          <YearSelect label={t.year} year={year} years={years} />
         </div>
 
         <div className="tabs-bar">
@@ -235,9 +223,10 @@ export default async function Rankings({
             {metrics.map((m) => (
               <Link
                 key={m}
+                scroll={false}
                 className={m === metric ? "active" : ""}
                 aria-current={m === metric ? "page" : undefined}
-                href={`/${lang}?indicator=${m}${year ? `&year=${year}` : ""}#rankings`}
+                href={`/${lang}?indicator=${m}${year ? `&year=${year}` : ""}`}
               >
                 {t[m]}
               </Link>

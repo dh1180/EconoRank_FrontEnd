@@ -164,6 +164,12 @@ export default function CompaniesExplorer({
   const [page, setPage] = useState(0);
   const [loadingExchange, setLoadingExchange] = useState(false);
   const [showAllExchanges, setShowAllExchanges] = useState(false);
+  const tableTopRef = useRef<HTMLDivElement>(null);
+
+  function goToPage(nextPage: number) {
+    setPage(nextPage);
+    tableTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   const cacheRef = useRef<Map<string, CompanyFeed>>(
     new Map([["ALL|ALL", initialFeed]]),
   );
@@ -490,7 +496,7 @@ export default function CompaniesExplorer({
         </div>
       )}
 
-      <div className="explorer-toolbar">
+      <div className="explorer-toolbar" ref={tableTopRef}>
         <div className="explorer-search-wrap">
           <svg
             width="15"
@@ -681,7 +687,7 @@ export default function CompaniesExplorer({
             type="button"
             className="small-button"
             disabled={safePage === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => goToPage(Math.max(0, safePage - 1))}
           >
             ← {t.previous}
           </button>
@@ -692,7 +698,7 @@ export default function CompaniesExplorer({
             type="button"
             className="small-button"
             disabled={safePage + 1 >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => goToPage(Math.min(totalPages - 1, safePage + 1))}
           >
             {t.next} →
           </button>

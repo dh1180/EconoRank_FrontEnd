@@ -15,6 +15,7 @@ import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
 import CountrySelector from "@/components/CountrySelector";
 import CountryFlag from "@/components/CountryFlag";
+import YearSelect from "@/components/YearSelect";
 import Provenance, { statusName, editionName } from "@/components/Provenance";
 
 export async function generateMetadata({
@@ -107,6 +108,7 @@ export default async function Compare({
             return (
               <Link
                 key={p.label}
+                scroll={false}
                 href={`/${lang}/compare?${qs}${year ? `&year=${year}` : ""}`}
                 className={`preset-pill ${active ? "active" : ""}`}
               >
@@ -124,12 +126,7 @@ export default async function Compare({
             <span>2–5</span>
           </div>
           <div className="selection-fields">
-            <label htmlFor="compare-year">{t.year}</label>
-            <select id="compare-year" name="year" defaultValue={year}>
-              {[...new Set([...(year ? [year] : []), ...years])].map((y) => (
-                <option key={y}>{y}</option>
-              ))}
-            </select>
+            <YearSelect id="compare-year" label={t.year} year={year} years={years} />
           </div>
           <fieldset>
             <legend>{t.country}</legend>
