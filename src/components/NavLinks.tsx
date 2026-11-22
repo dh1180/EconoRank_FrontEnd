@@ -56,6 +56,7 @@ export default function NavLinks({
           <Link
             key={item.href}
             href={item.href}
+            scroll={false}
             className={active ? "active" : undefined}
             aria-current={active ? "page" : undefined}
           >

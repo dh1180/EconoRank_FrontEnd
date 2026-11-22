@@ -227,13 +227,23 @@ export default function Community({
     }
   }
 
+  useEffect(() => {
+    const onPopState = () => {
+      const nextPost = new URLSearchParams(window.location.search).get("post");
+      setSelected(nextPost);
+      if (!nextPost) setThread(null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   function openPost(id: string | null) {
     setSelected(id);
     setThread(null);
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("post", id);
     else url.searchParams.delete("post");
-    window.history.replaceState(null, "", url);
+    window.history.pushState({ post: id }, "", url);
     contentTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
