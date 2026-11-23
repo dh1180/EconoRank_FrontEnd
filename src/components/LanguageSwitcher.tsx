@@ -112,7 +112,7 @@ function SwitcherInner({ lang }: { lang: Locale }) {
                     className={`lang-item ${l.code === lang ? "active" : ""}`}
                     aria-current={l.code === lang ? "true" : undefined}
                     onClick={() => {
-                      document.cookie = `statagora_lang=${l.code}; path=/; max-age=31536000; samesite=lax`;
+                      document.cookie = `econorank_lang=${l.code}; path=/; max-age=31536000; samesite=lax`;
                       setOpen(false);
                       setQuery("");
                     }}
@@ -142,7 +142,7 @@ function SwitcherInner({ lang }: { lang: Locale }) {
                   className={`lang-item ${l.code === lang ? "active" : ""}`}
                   aria-current={l.code === lang ? "true" : undefined}
                   onClick={() => {
-                    document.cookie = `statagora_lang=${l.code}; path=/; max-age=31536000; samesite=lax`;
+                    document.cookie = `econorank_lang=${l.code}; path=/; max-age=31536000; samesite=lax`;
                     setOpen(false);
                     setQuery("");
                   }}

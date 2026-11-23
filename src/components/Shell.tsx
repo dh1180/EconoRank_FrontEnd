@@ -19,7 +19,7 @@ export default function Shell({
       </a>
       <header className="header">
         <div className="container header-inner">
-          <Link href={`/${lang}`} className="brand" aria-label="StatAgora home">
+          <Link href={`/${lang}`} className="brand" aria-label="EconoRank home">
             <span className="brand-mark" aria-hidden="true">
               <svg
                 width="18"
@@ -34,7 +34,7 @@ export default function Shell({
               </svg>
             </span>
             <span className="brand-word">
-              Stat<span>Agora</span>
+              Econo<span>Rank</span>
             </span>
           </Link>
           <NavLinks
@@ -59,7 +59,7 @@ export default function Shell({
         <div className="container footer">
           <div className="footer-brand">
             <strong>
-              Stat<span>Agora</span>
+              Econo<span>Rank</span>
             </strong>
             <span>{t.policy}</span>
           </div>

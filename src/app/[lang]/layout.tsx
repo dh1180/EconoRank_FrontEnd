@@ -7,8 +7,8 @@ import "../globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || "http://localhost:3000"),
   title: {
-    default: "StatAgora · Global economy, in perspective",
-    template: "%s | StatAgora",
+    default: "EconoRank · Global economy, in perspective",
+    template: "%s | EconoRank",
   },
   description:
     "Explore IMF WEO GDP, GDP per capita, and PPP rankings, compare countries, and join the global economic conversation.",

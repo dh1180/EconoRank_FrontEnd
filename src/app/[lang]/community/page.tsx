@@ -30,7 +30,7 @@ export default async function CommunityPage({
   return (
     <>
       <section className="page-heading">
-        <p className="eyebrow">THE GLOBAL AGORA</p>
+        <p className="eyebrow">ECONORANK COMMUNITY</p>
         <h1>{t.discussion}</h1>
         <p className="lead">{t.discussionText}</p>
       </section>

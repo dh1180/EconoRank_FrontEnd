@@ -164,7 +164,7 @@ export default function CountryTrendChart({
           aria-label={`${t[metric]} ${series[0].year}-${series[series.length - 1].year}`}
         >
           <defs>
-            <linearGradient id="statagoraArea" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="econorankArea" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#14b89a" stopOpacity="0.24" />
               <stop offset="100%" stopColor="#14b89a" stopOpacity="0.01" />
             </linearGradient>
@@ -200,7 +200,7 @@ export default function CountryTrendChart({
             </g>
           ))}
 
-          <path d={fullAreaPath} fill="url(#statagoraArea)" />
+          <path d={fullAreaPath} fill="url(#econorankArea)" />
 
           {actualPoints.length >= 2 && (
             <path

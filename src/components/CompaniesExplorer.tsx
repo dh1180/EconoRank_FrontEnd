@@ -312,7 +312,7 @@ export default function CompaniesExplorer({
         : regionFilter !== "ALL"
           ? regionFilter
           : "global";
-    a.download = `statagora-companies-${scopeSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
+    a.download = `econorank-companies-${scopeSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

@@ -35,7 +35,7 @@ async function detectCountryFromBackend(
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const saved = cookieStore.get("statagora_lang")?.value;
+  const saved = cookieStore.get("econorank_lang")?.value;
   if (saved && isLocale(saved)) {
     redirect(`/${saved}`);
   }

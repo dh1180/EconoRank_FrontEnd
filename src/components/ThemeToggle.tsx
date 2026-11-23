@@ -7,7 +7,7 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     setMounted(true);
-    const saved = window.localStorage.getItem("statagora-theme");
+    const saved = window.localStorage.getItem("econorank-theme");
     const isDark = saved === "dark";
     setDark(isDark);
     document.documentElement.dataset.theme = isDark ? "dark" : "light";
@@ -17,7 +17,7 @@ export default function ThemeToggle() {
     const next = !dark;
     setDark(next);
     document.documentElement.dataset.theme = next ? "dark" : "light";
-    window.localStorage.setItem("statagora-theme", next ? "dark" : "light");
+    window.localStorage.setItem("econorank-theme", next ? "dark" : "light");
   }
 
   return (

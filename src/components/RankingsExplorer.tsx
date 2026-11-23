@@ -126,7 +126,7 @@ export default function RankingsExplorer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `statagora-${metric}-${year}.csv`;
+    a.download = `econorank-${metric}-${year}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

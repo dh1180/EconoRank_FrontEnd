@@ -29,7 +29,7 @@ export async function generateMetadata({
         ? "세계 GDP·1인당 GDP·PPP 순위"
         : "World GDP, GDP per capita & PPP rankings",
     alternates: { canonical: `/${lang}`, languages: { en: "/en", ko: "/ko" } },
-    openGraph: { title: "StatAgora · Global economic rankings (IMF WEO)" },
+    openGraph: { title: "EconoRank · Global economic rankings (IMF WEO)" },
   };
 }
 
@@ -159,7 +159,7 @@ export default async function Rankings({
             </ol>
           ) : (
             <div className="snapshot-empty">
-              <p>STAT / AGORA</p>
+              <p>ECONO / RANK</p>
               <strong>IMF World Economic Outlook (WEO)</strong>
             </div>
           )}
@@ -248,7 +248,7 @@ export default async function Rankings({
 
       <section className="community-banner">
         <div>
-          <p className="eyebrow">THE AGORA</p>
+          <p className="eyebrow">GLOBAL COMMUNITY</p>
           <h2>{t.discussion}</h2>
           <p>{t.discussionText}</p>
         </div>

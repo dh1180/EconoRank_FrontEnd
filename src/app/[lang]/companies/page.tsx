@@ -120,7 +120,7 @@ export default async function CompaniesPage({
             </ol>
           ) : (
             <div className="snapshot-empty">
-              <p>STAT / AGORA</p>
+              <p>ECONO / RANK</p>
               <strong>Live Global Market Cap</strong>
             </div>
           )}
