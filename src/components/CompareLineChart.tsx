@@ -15,7 +15,7 @@ import { COMPARE_COLORS } from "@/lib/palette";
 import CountryFlag from "@/components/CountryFlag";
 
 type ChartMetric = Metric | "pop";
-type RangeKey = "all" | "1980" | "2000" | "10y" | "forecast";
+type RangeKey = "all" | "1990" | "2000" | "10y" | "forecast";
 
 function popLabel(lang: Locale): string {
   if (lang === "ko") return "인구수";
@@ -33,6 +33,16 @@ function formatVal(val: number | undefined, metric: ChartMetric, lang: Locale): 
     return c;
   }
   return metricAmount(val, metric, lang);
+}
+
+/** Compute clean human-friendly rounded tick ceiling (e.g. 6T instead of 5.91T). */
+function niceCeiling(maxVal: number): number {
+  if (maxVal <= 0) return 1;
+  const exp = Math.pow(10, Math.floor(Math.log10(maxVal)));
+  const frac = maxVal / exp;
+  const niceFrac =
+    frac <= 1.2 ? 1.2 : frac <= 1.5 ? 1.5 : frac <= 2 ? 2 : frac <= 2.5 ? 2.5 : frac <= 3 ? 3 : frac <= 4 ? 4 : frac <= 5 ? 5 : frac <= 6 ? 6 : frac <= 8 ? 8 : 10;
+  return niceFrac * exp;
 }
 
 export default function CompareLineChart({
@@ -116,7 +126,7 @@ export default function CompareLineChart({
     const minY =
       range === "all"
         ? 1980
-        : range === "1980"
+        : range === "1990"
           ? 1990
           : range === "2000"
             ? 2000
@@ -144,14 +154,14 @@ export default function CompareLineChart({
   const minRaw = Math.min(...allVals);
   const maxRaw = Math.max(...allVals);
   const yMin = logScale ? Math.max(1, minRaw * 0.85) : 0;
-  const yMax = maxRaw === yMin ? maxRaw * 1.2 || 1 : maxRaw * 1.08;
+  const yMax = logScale ? maxRaw * 1.12 : niceCeiling(maxRaw * 1.03);
 
-  const width = 820;
-  const height = 310;
-  const padL = 74;
-  const padR = 26;
-  const padT = 22;
-  const padB = 36;
+  const width = 860;
+  const height = 340;
+  const padL = 72;
+  const padR = 112;
+  const padT = 20;
+  const padB = 34;
   const chartW = width - padL - padR;
   const chartH = height - padT - padB;
 
@@ -179,10 +189,14 @@ export default function CompareLineChart({
   });
 
   const xTickStep =
-    allYears.length > 45 ? 10 : allYears.length > 22 ? 5 : allYears.length > 12 ? 2 : 1;
-  const xTicks = allYears.filter(
-    (y, idx) => idx === 0 || idx === allYears.length - 1 || y % xTickStep === 0,
-  );
+    allYears.length > 42 ? 10 : allYears.length > 20 ? 5 : allYears.length > 12 ? 2 : 1;
+  const xTicks = allYears.filter((y, idx) => {
+    if (idx === 0 || idx === allYears.length - 1) return true;
+    if (y % xTickStep !== 0) return false;
+    // Prevent label crowding right next to the last year
+    if (maxYear - y < Math.max(2, xTickStep * 0.45)) return false;
+    return true;
+  });
 
   const activeYear =
     hoveredYear !== null && allYears.includes(hoveredYear)
@@ -191,18 +205,67 @@ export default function CompareLineChart({
         ? currentYear
         : allYears[allYears.length - 1];
 
-  const activeRows = visibleCountries
-    .map((c) => {
-      const idx = countries.findIndex((x) => x.code === c.code);
+  const readoutRows = countries
+    .map((c, idx) => {
       const pt = pointsByCountry.get(c.code)?.get(activeYear);
       return {
         country: c,
         color: COMPARE_COLORS[idx % COMPARE_COLORS.length],
         value: pt?.value,
-        status: pt?.status,
+        hidden: hiddenCodes.has(c.code),
       };
     })
-    .sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
+    .sort((a, b) => {
+      if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
+      return (b.value ?? -1) - (a.value ?? -1);
+    });
+
+  // Direct end-of-line labels with vertical anti-collision spacing
+  const endLabelsRaw = visibleCountries
+    .map((c) => {
+      const idx = countries.findIndex((x) => x.code === c.code);
+      const ym = pointsByCountry.get(c.code);
+      if (!ym) return null;
+      let lastY: number | null = null;
+      let lastVal: number | null = null;
+      for (let i = allYears.length - 1; i >= 0; i--) {
+        const p = ym.get(allYears[i]);
+        if (p) {
+          lastY = allYears[i];
+          lastVal = p.value;
+          break;
+        }
+      }
+      if (lastY === null || lastVal === null) return null;
+      return {
+        code: c.code,
+        label: countryName(c.code, c.name, lang),
+        color: COMPARE_COLORS[idx % COMPARE_COLORS.length],
+        rawY: yOfVal(lastVal),
+        y: yOfVal(lastVal),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.rawY - b.rawY);
+
+  const minGap = 16;
+  for (let i = 1; i < endLabelsRaw.length; i++) {
+    if (endLabelsRaw[i].y - endLabelsRaw[i - 1].y < minGap) {
+      endLabelsRaw[i].y = endLabelsRaw[i - 1].y + minGap;
+    }
+  }
+  const bottomLimit = padT + chartH - 4;
+  if (
+    endLabelsRaw.length > 0 &&
+    endLabelsRaw[endLabelsRaw.length - 1].y > bottomLimit
+  ) {
+    endLabelsRaw[endLabelsRaw.length - 1].y = bottomLimit;
+    for (let i = endLabelsRaw.length - 2; i >= 0; i--) {
+      if (endLabelsRaw[i + 1].y - endLabelsRaw[i].y < minGap) {
+        endLabelsRaw[i].y = Math.max(padT + 8, endLabelsRaw[i + 1].y - minGap);
+      }
+    }
+  }
 
   const metricTabs: { key: ChartMetric; label: string }[] = [
     ...metrics.map((m) => ({ key: m as ChartMetric, label: t[m] })),
@@ -211,7 +274,7 @@ export default function CompareLineChart({
 
   const rangeTabs: { key: RangeKey; label: string }[] = [
     { key: "all", label: ko ? "전체 (1980~)" : "All (1980–)" },
-    { key: "1980", label: "1990~" },
+    { key: "1990", label: "1990~" },
     { key: "2000", label: "2000~" },
     { key: "10y", label: ko ? "최근 10년" : "10Y" },
     { key: "forecast", label: ko ? "전망 포함 (~2031)" : "Forecast (~2031)" },
@@ -229,7 +292,11 @@ export default function CompareLineChart({
     });
   }
 
-  const sliceW = Math.max(8, chartW / Math.max(1, allYears.length));
+  const sliceW = Math.max(10, chartW / Math.max(1, allYears.length));
+  const forecastBoundaryX =
+    range === "forecast" && allYears.includes(currentYear)
+      ? xOfYear(currentYear)
+      : null;
 
   return (
     <section className="panel compare-chart-panel">
@@ -281,26 +348,32 @@ export default function CompareLineChart({
           onClick={() => setLogScale((v) => !v)}
           title={ko ? "로그 스케일 전환 (장기 성장률 비교에 유용)" : "Toggle logarithmic scale"}
         >
-          {logScale ? (ko ? "로그 축 ON" : "Log scale ON") : ko ? "로그 축" : "Log scale"}
+          {logScale ? (ko ? "로그 축 ON" : "Log ON") : ko ? "로그 축" : "Log scale"}
         </button>
       </div>
 
       <div className="compare-chart-readout">
         <span className="compare-readout-year mono">{activeYear}</span>
         <div className="compare-readout-items">
-          {activeRows.map(({ country, color, value }) => (
-            <span
+          {readoutRows.map(({ country, color, value, hidden }) => (
+            <button
               key={country.code}
-              className="compare-readout-chip"
-              title={value ? fullAmount(value, lang) : undefined}
+              type="button"
+              className={`compare-readout-chip ${hidden ? "off" : ""}`}
+              onClick={() => toggleCountry(country.code)}
+              title={
+                value
+                  ? `${fullAmount(value, lang)} (${ko ? "클릭하여 표시 전환" : "Click to toggle"})`
+                  : undefined
+              }
             >
-              <i style={{ background: color }} />
+              <i style={{ background: hidden ? "var(--muted)" : color }} />
               <CountryFlag code={country.code} size="sm" />
               <span className="compare-readout-name">
                 {countryName(country.code, country.name, lang)}
               </span>
               <strong className="mono">{formatVal(value, metric, lang)}</strong>
-            </span>
+            </button>
           ))}
         </div>
       </div>
@@ -312,6 +385,16 @@ export default function CompareLineChart({
           role="img"
           aria-label={`${metric} ${minYear}-${maxYear}`}
         >
+          {forecastBoundaryX !== null && (
+            <rect
+              x={forecastBoundaryX}
+              y={padT}
+              width={width - padR - forecastBoundaryX}
+              height={chartH}
+              className="forecast-zone"
+            />
+          )}
+
           {yTicks.map((tick, idx) => (
             <g key={idx}>
               <line
@@ -369,7 +452,15 @@ export default function CompareLineChart({
 
             if (pts.length < 2) return null;
 
-            const firstForecast = pts.findIndex((p) => p.status !== "ACTUAL");
+            const toPath = (list: typeof pts) =>
+              list
+                .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+                .join(" ");
+
+            const splitForecast = range === "forecast";
+            const firstForecast = splitForecast
+              ? pts.findIndex((p) => p.year > currentYear)
+              : -1;
             const actualPts =
               firstForecast === -1
                 ? pts
@@ -383,11 +474,6 @@ export default function CompareLineChart({
                   ? pts
                   : pts.slice(firstForecast - 1);
 
-            const toPath = (list: typeof pts) =>
-              list
-                .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-                .join(" ");
-
             const activePt = pts.find((p) => p.year === activeYear);
 
             return (
@@ -397,7 +483,7 @@ export default function CompareLineChart({
                     d={toPath(actualPts)}
                     fill="none"
                     stroke={color}
-                    strokeWidth={2.5}
+                    strokeWidth={2.4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -408,7 +494,7 @@ export default function CompareLineChart({
                     fill="none"
                     stroke={color}
                     strokeWidth={2.2}
-                    strokeDasharray="6 5"
+                    strokeDasharray="5 4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     opacity={0.85}
@@ -418,7 +504,7 @@ export default function CompareLineChart({
                   <circle
                     cx={activePt.x}
                     cy={activePt.y}
-                    r={5.5}
+                    r={5}
                     fill={color}
                     stroke="var(--surface)"
                     strokeWidth={2}
@@ -427,6 +513,20 @@ export default function CompareLineChart({
               </g>
             );
           })}
+
+          {endLabelsRaw.map((el) => (
+            <g key={el.code}>
+              <circle cx={width - padR + 8} cy={el.y} r={3.5} fill={el.color} />
+              <text
+                x={width - padR + 16}
+                y={el.y + 4}
+                className="chart-end-label"
+                fill={el.color}
+              >
+                {el.label.length > 10 ? `${el.label.slice(0, 9)}…` : el.label}
+              </text>
+            </g>
+          ))}
 
           {allYears.map((y) => (
             <rect
@@ -444,26 +544,13 @@ export default function CompareLineChart({
         </svg>
       </div>
 
-      <div className="compare-chart-legend">
-        {countries.map((c, idx) => {
-          const hidden = hiddenCodes.has(c.code);
-          const color = COMPARE_COLORS[idx % COMPARE_COLORS.length];
-          return (
-            <button
-              key={c.code}
-              type="button"
-              className={`compare-legend-toggle ${hidden ? "off" : ""}`}
-              onClick={() => toggleCountry(c.code)}
-            >
-              <i style={{ background: hidden ? "var(--muted)" : color }} />
-              <CountryFlag code={c.code} size="sm" />
-              <span>{countryName(c.code, c.name, lang)}</span>
-            </button>
-          );
-        })}
-        <span className="compare-chart-source muted">
-          IMF WEO (1980–2031)
+      <div className="compare-chart-footer">
+        <span className="muted">
+          {ko
+            ? "차트 위를 움직여 연도별 비교 · 상단 국가 칩 클릭으로 선 숨김/표시"
+            : "Hover chart to compare by year · Click country chips above to toggle lines"}
         </span>
+        <span className="muted">IMF WEO (1980–2031)</span>
       </div>
     </section>
   );
