@@ -4726,16 +4726,17 @@ html[data-theme="dark"] .admin-tab.active {
 }
 .selection .country-options,
 .selection .selector-list {
-  height: 210px;
-  max-height: 210px;
+  height: auto;
+  max-height: 220px;
   overflow-y: auto;
+  align-content: start;
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
 }
-.selection .button {
+.selection .selection-apply-btn {
   display: block;
   width: 100%;
-  margin-top: 14px;
+  margin: 0 0 16px;
 }
 
 .compare-readout-chip {

@@ -147,6 +147,9 @@ export default async function Compare({
           <div className="selection-fields">
             <YearSelect id="compare-year" label={t.year} year={year} years={years} />
           </div>
+          <button className="button selection-apply-btn" type="submit">
+            {t.apply}
+          </button>
           <fieldset>
             <legend>{t.country}</legend>
             <CountrySelector
@@ -156,9 +159,6 @@ export default async function Compare({
               lang={lang}
             />
           </fieldset>
-          <button className="button" type="submit">
-            {t.apply}
-          </button>
         </form>
 
         <section className="comparison-results" aria-live="polite">
