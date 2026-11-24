@@ -64,12 +64,25 @@ export default function Shell({
             <span>{t.policy}</span>
           </div>
           <div className="footer-links">
+            <Link href={`/${lang}/about`}>
+              {lang === "ko" ? "소개" : lang === "ja" ? "サイトについて" : "About"}
+            </Link>
+            <Link href={`/${lang}/privacy`}>
+              {lang === "ko"
+                ? "개인정보처리방침"
+                : lang === "ja"
+                  ? "プライバシーポリシー"
+                  : "Privacy"}
+            </Link>
+            <Link href={`/${lang}/terms`}>
+              {lang === "ko" ? "이용약관" : lang === "ja" ? "利用規約" : "Terms"}
+            </Link>
             <a
               href="https://data.imf.org/en/datasets/IMF.RES:WEO"
               target="_blank"
               rel="noreferrer"
             >
-              IMF World Economic Outlook (WEO) ↗
+              IMF WEO ↗
             </a>
           </div>
         </div>
