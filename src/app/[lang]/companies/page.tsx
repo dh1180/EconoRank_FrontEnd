@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { api, amount, type CompanyFeed } from "@/lib/api";
 import { countryName } from "@/lib/geography";
 import { dictionary, isLocale } from "@/lib/i18n";
+import { buildPageMetadata, siteOrigin } from "@/lib/seo";
 import CountryFlag from "@/components/CountryFlag";
 import CompanyLogo from "@/components/CompanyLogo";
 import CompaniesExplorer from "@/components/CompaniesExplorer";
+import JsonLd from "@/components/JsonLd";
 
 export async function generateMetadata({
   params,
@@ -14,14 +16,15 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  const t = dictionary(isLocale(lang) ? lang : "en");
-  return {
+  const loc = isLocale(lang) ? lang : "en";
+  const t = dictionary(loc);
+  return buildPageMetadata({
+    lang: loc,
+    path: "/companies",
     title: `${t.companies} · ${t.marketCap}`,
-    alternates: {
-      canonical: `/${lang}/companies`,
-      languages: { en: "/en/companies", ko: "/ko/companies" },
-    },
-  };
+    description: t.companiesLead,
+    keywords: [t.companies, t.marketCap, "NASDAQ", "NYSE", "KRX", "EconoRank"],
+  });
 }
 
 export default async function CompaniesPage({
@@ -42,9 +45,44 @@ export default async function CompaniesPage({
   const leaderCap = feed?.items[0]?.marketCap ?? 1;
   const top100Cap =
     feed?.items.slice(0, 100).reduce((sum, c) => sum + c.marketCap, 0) ?? 0;
+  const origin = siteOrigin();
+  const companiesJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Dataset",
+        name: `${t.companies} · ${t.marketCap} — EconoRank`,
+        description: t.companiesLead,
+        url: `${origin}/${lang}/companies`,
+        inLanguage: lang,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "EconoRank", item: `${origin}/${lang}` },
+          { "@type": "ListItem", position: 2, name: t.companies, item: `${origin}/${lang}/companies` },
+        ],
+      },
+      ...(feed && feed.items.length > 0
+        ? [
+            {
+              "@type": "ItemList",
+              name: `${t.globalTop250} — ${t.marketCap}`,
+              numberOfItems: Math.min(10, feed.items.length),
+              itemListElement: feed.items.slice(0, 10).map((c) => ({
+                "@type": "ListItem",
+                position: c.rank,
+                name: `${c.name} (${c.symbol})`,
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
 
   return (
     <>
+      <JsonLd data={companiesJsonLd} />
       <section className="hero">
         <div className="hero-copy">
           <div className="hero-badge">

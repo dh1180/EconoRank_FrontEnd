@@ -11,12 +11,14 @@ import {
   type Observation,
 } from "@/lib/api";
 import { isLocale, dictionary } from "@/lib/i18n";
+import { buildPageMetadata, siteOrigin } from "@/lib/seo";
 import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
 import CountrySelector from "@/components/CountrySelector";
 import CountryFlag from "@/components/CountryFlag";
 import YearSelect from "@/components/YearSelect";
 import Provenance, { statusName, editionName } from "@/components/Provenance";
+import JsonLd from "@/components/JsonLd";
 
 export async function generateMetadata({
   params,
@@ -24,14 +26,15 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  const t = dictionary(isLocale(lang) ? lang : "en");
-  return {
-    title: t.compare,
-    alternates: {
-      canonical: `/${lang}/compare`,
-      languages: { en: "/en/compare", ko: "/ko/compare" },
-    },
-  };
+  const loc = isLocale(lang) ? lang : "en";
+  const t = dictionary(loc);
+  return buildPageMetadata({
+    lang: loc,
+    path: "/compare",
+    title: `${t.compare} · ${t.gdp}, ${t.gdppc}, ${t.ppp}`,
+    description: t.compareIntro,
+    keywords: [t.compare, t.gdp, t.gdppc, t.ppp, "IMF WEO", "EconoRank"],
+  });
 }
 
 export default async function Compare({
@@ -89,8 +92,19 @@ export default async function Compare({
     { label: t.presetBrics, codes: ["CHN", "IND", "BRA", "RUS", "ZAF"] },
   ];
 
+  const origin = siteOrigin();
+  const compareJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "EconoRank", item: `${origin}/${lang}` },
+      { "@type": "ListItem", position: 2, name: t.compare, item: `${origin}/${lang}/compare` },
+    ],
+  };
+
   return (
     <>
+      <JsonLd data={compareJsonLd} />
       <section className="page-heading">
         <p className="eyebrow">{t.countryComparisonEyebrow}</p>
         <h1>{t.compareTitle}</h1>

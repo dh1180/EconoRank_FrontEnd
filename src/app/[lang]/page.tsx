@@ -6,6 +6,8 @@ import YearSelect from "@/components/YearSelect";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { isLocale, dictionary } from "@/lib/i18n";
+import { buildPageMetadata, siteOrigin } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
 import {
   api,
   metricAmount,
@@ -23,14 +25,15 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  return {
-    title:
-      lang === "ko"
-        ? "세계 GDP·1인당 GDP·PPP 순위"
-        : "World GDP, GDP per capita & PPP rankings",
-    alternates: { canonical: `/${lang}`, languages: { en: "/en", ko: "/ko" } },
-    openGraph: { title: "EconoRank · Global economic rankings (IMF WEO)" },
-  };
+  const loc = isLocale(lang) ? lang : "en";
+  const t = dictionary(loc);
+  return buildPageMetadata({
+    lang: loc,
+    path: "",
+    title: `${t.rankings} · ${t.gdp}, ${t.gdppc}, ${t.ppp}`,
+    description: `${t.intro} (${t.worldbank})`,
+    keywords: [t.gdp, t.gdppc, t.ppp, "IMF WEO", "EconoRank"],
+  });
 }
 
 export default async function Rankings({
@@ -76,9 +79,44 @@ export default async function Rankings({
   const topFive = allItems.slice(0, 5);
   const topLeaderValue = allItems[0]?.value ?? 1;
   const unitLabel = metric === "ppp" ? "Int$" : "US$";
+  const origin = siteOrigin();
+  const rankingsJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Dataset",
+        name: `${t[metric]} (${year ?? ""}) — EconoRank`,
+        description: t.definition,
+        url: `${origin}/${lang}`,
+        inLanguage: lang,
+        creator: {
+          "@type": "Organization",
+          name: "International Monetary Fund (IMF WEO)",
+          url: "https://data.imf.org/en/datasets/IMF.RES:WEO",
+        },
+        temporalCoverage: year ? `${year}` : "2022/2031",
+      },
+      ...(allItems.length > 0
+        ? [
+            {
+              "@type": "ItemList",
+              name: `${t[metric]} Top 10 (${year ?? ""})`,
+              numberOfItems: Math.min(10, allItems.length),
+              itemListElement: allItems.slice(0, 10).map((row) => ({
+                "@type": "ListItem",
+                position: row.rank,
+                name: countryName(row.code, row.name, lang),
+                url: `${origin}/${lang}/countries/${row.code}`,
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
 
   return (
     <>
+      <JsonLd data={rankingsJsonLd} />
       <section className="hero">
         <div className="hero-copy">
           <div className="hero-badge">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale, dictionary } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
 import Community from "@/components/Community";
 
 export async function generateMetadata({
@@ -9,11 +10,15 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  const t = dictionary(isLocale(lang) ? lang : "en");
-  return {
+  const loc = isLocale(lang) ? lang : "en";
+  const t = dictionary(loc);
+  return buildPageMetadata({
+    lang: loc,
+    path: "/community",
     title: t.community,
-    robots: { index: false, follow: true },
-  };
+    description: t.discussionText,
+    noIndex: true,
+  });
 }
 
 export default async function CommunityPage({

@@ -1,11 +1,17 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin } from "@/lib/seo";
+
 export default function robots(): MetadataRoute.Robots {
+  const base = siteOrigin();
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/api/", "/en/community", "/ko/community"],
-    },
-    sitemap: `${process.env.SITE_URL || "http://localhost:3000"}/sitemap.xml`,
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/api/"],
+      },
+    ],
+    sitemap: `${base}/sitemap.xml`,
+    host: base,
   };
 }

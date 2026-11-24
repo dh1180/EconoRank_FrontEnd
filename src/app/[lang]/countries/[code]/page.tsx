@@ -14,20 +14,24 @@ import {
   type Observation,
 } from "@/lib/api";
 import { isLocale, dictionary } from "@/lib/i18n";
+import { buildPageMetadata, siteOrigin } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
 
 type Props = { params: Promise<{ lang: string; code: string }> };
 type Profile = { country: Country; observations: Observation[] };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, code } = await params;
-  const t = dictionary(isLocale(lang) ? lang : "en");
-  return {
-    title: `${code} · ${t.countryTitle}`,
-    alternates: {
-      canonical: `/${lang}/countries/${code}`,
-      languages: { en: `/en/countries/${code}`, ko: `/ko/countries/${code}` },
-    },
-  };
+  const loc = isLocale(lang) ? lang : "en";
+  const t = dictionary(loc);
+  const localizedName = countryName(code, code, loc);
+  return buildPageMetadata({
+    lang: loc,
+    path: `/countries/${code}`,
+    title: `${localizedName} (${code}) · ${t.countryTitle}`,
+    description: `${localizedName} (${code}) ${t.gdp}, ${t.gdppc}, ${t.ppp} — ${t.worldbank}`,
+    keywords: [localizedName, code, t.gdp, t.gdppc, t.ppp, "IMF WEO", "EconoRank"],
+  });
 }
 
 function formatDelta(current?: number, prev?: number): string | null {
@@ -78,8 +82,38 @@ export default async function CountryPage({ params }: Props) {
     return { metric: m, latest, delta };
   });
 
+  const localizedCountry = countryName(code, data.country.name, lang);
+  const origin = siteOrigin();
+  const countryJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "EconoRank", item: `${origin}/${lang}` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: localizedCountry,
+            item: `${origin}/${lang}/countries/${code}`,
+          },
+        ],
+      },
+      {
+        "@type": "Dataset",
+        name: `${localizedCountry} (${code}) ${t.countryTitle} — EconoRank`,
+        description: `${localizedCountry} ${t.gdp}, ${t.gdppc}, ${t.ppp} (${t.worldbank})`,
+        url: `${origin}/${lang}/countries/${code}`,
+        inLanguage: lang,
+        spatialCoverage: localizedCountry,
+        temporalCoverage: "2022/2031",
+      },
+    ],
+  };
+
   return (
     <>
+      <JsonLd data={countryJsonLd} />
       <section className="country-hero">
         <div className="country-hero-main">
           <div className="hero-badge">
