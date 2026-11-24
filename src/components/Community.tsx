@@ -673,7 +673,7 @@ export default function Community({
         ) : (
           <>
             <div className="section-head">
-              <h2>{selected ? t.reply : t.global}</h2>
+              <h2>{t.global}</h2>
               {selected ? (
                 <button className="small-button" onClick={() => openPost(null)}>
                   {t.back}

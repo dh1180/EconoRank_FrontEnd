@@ -34,7 +34,7 @@ export default async function CommunityPage({
   const q = await searchParams;
   return (
     <>
-      <section className="page-heading">
+      <section className="page-heading community-page-heading">
         <p className="eyebrow">ECONORANK COMMUNITY</p>
         <h1>{t.discussion}</h1>
         <p className="lead">{t.discussionText}</p>

@@ -208,7 +208,13 @@ export function StatText({ text, lang }: { text: string; lang: Locale }) {
             return <CompanyStatCard key={idx} symbol={segs[1]} lang={lang} />;
           }
         }
-        return <span key={idx}>{part}</span>;
+        const cleaned = part.replace(/^\n+/, "").replace(/\n+$/, "");
+        if (!cleaned) return null;
+        return (
+          <p key={idx} className="post-body-para">
+            {cleaned}
+          </p>
+        );
       })}
     </div>
   );
