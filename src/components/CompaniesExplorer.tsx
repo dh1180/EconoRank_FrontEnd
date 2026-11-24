@@ -269,7 +269,12 @@ export default function CompaniesExplorer({
     });
   }, [items, query, countryFilter, lang]);
 
-  const localTopCap = filtered[0]?.marketCap ?? items[0]?.marketCap ?? 1;
+  const scopedRankMap = useMemo(
+    () => new Map(items.map((c, i) => [`${c.rank}-${c.symbol}`, i + 1])),
+    [items],
+  );
+
+  const localTopCap = items[0]?.marketCap ?? 1;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageItems = filtered.slice(
@@ -575,9 +580,9 @@ export default function CompaniesExplorer({
               </tr>
             </thead>
             <tbody>
-              {pageItems.map((c, idx) => {
+              {pageItems.map((c) => {
                 const displayRank = isScopedView
-                  ? safePage * PAGE_SIZE + idx + 1
+                  ? (scopedRankMap.get(`${c.rank}-${c.symbol}`) ?? c.rank)
                   : c.rank;
                 const isTop3 = displayRank >= 1 && displayRank <= 3;
                 const barPct = Math.max(1, (c.marketCap / localTopCap) * 100);
