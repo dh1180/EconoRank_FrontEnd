@@ -86,6 +86,13 @@ export default async function LocaleLayout({
   };
   return (
     <html lang={lang} dir={isRtl(lang) ? "rtl" : "ltr"}>
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3862816878614020"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         <JsonLd data={siteJsonLd} />
         {GA_ID && (
