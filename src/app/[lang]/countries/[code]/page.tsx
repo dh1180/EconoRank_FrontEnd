@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   api,
+  amount,
   metricAmount,
   fullAmount,
   metrics,
@@ -49,6 +50,55 @@ function formatDelta(current?: number, prev?: number): string | null {
   return `${sign}${pct.toFixed(1)}%`;
 }
 
+function populationLabel(lang: string): string {
+  if (lang === "ko") return "인구수";
+  if (lang === "ja") return "人口";
+  if (lang.startsWith("zh")) return "人口";
+  if (lang === "es") return "Población";
+  if (lang === "fr") return "Population";
+  if (lang === "de") return "Bevölkerung";
+  return "Population";
+}
+
+function formatPopulation(value: number | undefined, lang: string): string {
+  if (value === undefined || !Number.isFinite(value) || value <= 0) return "—";
+  const compact = amount(value, lang);
+  if (lang === "ko") return `${compact}명`;
+  if (lang === "ja") return `${compact}人`;
+  return compact;
+}
+
+function derivePopulationByYear(
+  observations: Observation[],
+): Map<number, { value: number; status: "ACTUAL" | "ESTIMATE_OR_FORECAST" }> {
+  const byYear = new Map<
+    number,
+    { gdp?: Observation; gdppc?: Observation }
+  >();
+  for (const o of observations) {
+    if (o.indicator !== "gdp" && o.indicator !== "gdppc") continue;
+    const entry = byYear.get(o.year) ?? {};
+    if (o.indicator === "gdp") entry.gdp = o;
+    else entry.gdppc = o;
+    byYear.set(o.year, entry);
+  }
+  const result = new Map<
+    number,
+    { value: number; status: "ACTUAL" | "ESTIMATE_OR_FORECAST" }
+  >();
+  for (const [year, { gdp, gdppc }] of byYear.entries()) {
+    if (gdp && gdppc && gdppc.value > 0 && gdp.value > 0) {
+      const pop = Math.round(gdp.value / gdppc.value);
+      const status =
+        gdp.status === "ACTUAL" && gdppc.status === "ACTUAL"
+          ? "ACTUAL"
+          : "ESTIMATE_OR_FORECAST";
+      result.set(year, { value: pop, status });
+    }
+  }
+  return result;
+}
+
 export default async function CountryPage({ params }: Props) {
   const { lang, code } = await params;
   if (!isLocale(lang) || !/^[A-Z]{3}$/.test(code)) notFound();
@@ -81,6 +131,17 @@ export default async function CountryPage({ params }: Props) {
     const delta = formatDelta(latest?.value, prev?.value);
     return { metric: m, latest, delta };
   });
+
+  const popByYear = derivePopulationByYear(data.observations);
+  const latestPopYear = [...popByYear.keys()]
+    .filter((y) => y <= currentUtcYear)
+    .sort((a, b) => b - a)[0];
+  const latestPop =
+    latestPopYear !== undefined ? popByYear.get(latestPopYear) : undefined;
+  const prevPop =
+    latestPopYear !== undefined ? popByYear.get(latestPopYear - 1) : undefined;
+  const popDelta = formatDelta(latestPop?.value, prevPop?.value);
+  const popTitle = populationLabel(lang);
 
   const localizedCountry = countryName(code, data.country.name, lang);
   const origin = siteOrigin();
@@ -181,6 +242,42 @@ export default async function CountryPage({ params }: Props) {
             </div>
           </div>
         ))}
+        <div className="stat-card" key="population">
+          <div className="stat-card-top">
+            <span className="stat-label">{popTitle}</span>
+            <span className="unit-badge">
+              {latestPopYear ?? "—"} · IMF WEO
+            </span>
+          </div>
+          <strong
+            className="stat-value"
+            title={
+              latestPop
+                ? `${fullAmount(latestPop.value, lang)}${lang === "ko" ? "명" : lang === "ja" ? "人" : ""}`
+                : undefined
+            }
+          >
+            {formatPopulation(latestPop?.value, lang)}
+          </strong>
+          <div className="stat-meta-row">
+            {latestPop ? (
+              <small
+                className={`value-status ${latestPop.status === "ACTUAL" ? "actual" : "forecast"}`}
+              >
+                {statusName(latestPop.status, lang)}
+              </small>
+            ) : (
+              <small className="stat-sub">{t.missing}</small>
+            )}
+            {popDelta && (
+              <span
+                className={`delta-pill ${popDelta.startsWith("+") ? "up" : "down"}`}
+              >
+                {popDelta} YoY
+              </span>
+            )}
+          </div>
+        </div>
       </section>
 
       <CountryTrendChart observations={data.observations} lang={lang} />
@@ -203,52 +300,86 @@ export default async function CountryPage({ params }: Props) {
                     {t[m]} ({m === "ppp" ? "Int$" : "US$"})
                   </th>
                 ))}
+                <th className="numeric">{popTitle}</th>
               </tr>
             </thead>
             <tbody>
-              {years.map((y) => (
-                <tr key={y}>
-                  <th scope="row" className="year-cell">
-                    {y}
-                  </th>
-                  {metrics.map((m) => {
-                    const item = data.observations.find(
-                      (o) => o.year === y && o.indicator === m,
-                    );
-                    const prev = data.observations.find(
-                      (o) => o.year === y - 1 && o.indicator === m,
-                    );
-                    const delta = formatDelta(item?.value, prev?.value);
-                    return (
-                      <td
-                        className="numeric"
-                        key={m}
-                        title={item ? fullAmount(item.value, lang) : undefined}
-                      >
-                        <span className="amount-val">
-                          {metricAmount(item?.value, m, lang)}
-                        </span>
-                        {item && (
-                          <span className="cell-badges">
-                            <small
-                              className={`value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`}
-                            >
-                              {statusName(item.status, lang)}
-                            </small>
-                            {delta && (
-                              <span
-                                className={`delta-inline ${delta.startsWith("+") ? "up" : "down"}`}
-                              >
-                                {delta}
-                              </span>
-                            )}
+              {years.map((y) => {
+                const pop = popByYear.get(y);
+                const popPrev = popByYear.get(y - 1);
+                const rowPopDelta = formatDelta(pop?.value, popPrev?.value);
+                return (
+                  <tr key={y}>
+                    <th scope="row" className="year-cell">
+                      {y}
+                    </th>
+                    {metrics.map((m) => {
+                      const item = data.observations.find(
+                        (o) => o.year === y && o.indicator === m,
+                      );
+                      const prev = data.observations.find(
+                        (o) => o.year === y - 1 && o.indicator === m,
+                      );
+                      const delta = formatDelta(item?.value, prev?.value);
+                      return (
+                        <td
+                          className="numeric"
+                          key={m}
+                          title={item ? fullAmount(item.value, lang) : undefined}
+                        >
+                          <span className="amount-val">
+                            {metricAmount(item?.value, m, lang)}
                           </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                          {item && (
+                            <span className="cell-badges">
+                              <small
+                                className={`value-status ${item.status === "ACTUAL" ? "actual" : "forecast"}`}
+                              >
+                                {statusName(item.status, lang)}
+                              </small>
+                              {delta && (
+                                <span
+                                  className={`delta-inline ${delta.startsWith("+") ? "up" : "down"}`}
+                                >
+                                  {delta}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td
+                      className="numeric"
+                      title={
+                        pop
+                          ? `${fullAmount(pop.value, lang)}${lang === "ko" ? "명" : lang === "ja" ? "人" : ""}`
+                          : undefined
+                      }
+                    >
+                      <span className="amount-val">
+                        {formatPopulation(pop?.value, lang)}
+                      </span>
+                      {pop && (
+                        <span className="cell-badges">
+                          <small
+                            className={`value-status ${pop.status === "ACTUAL" ? "actual" : "forecast"}`}
+                          >
+                            {statusName(pop.status, lang)}
+                          </small>
+                          {rowPopDelta && (
+                            <span
+                              className={`delta-inline ${rowPopDelta.startsWith("+") ? "up" : "down"}`}
+                            >
+                              {rowPopDelta}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

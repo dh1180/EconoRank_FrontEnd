@@ -4527,3 +4527,18 @@ html[data-theme="dark"] .sort-pill.active {
 .btn.danger:hover {
   background: rgba(220, 38, 38, 0.1);
 }
+
+/* Country page 4-card KPI grid (GDP, GDP per capita, PPP, Population) */
+.stats.country-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 960px) {
+  .stats.country-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .stats.country-kpis {
+    grid-template-columns: 1fr;
+  }
+}
