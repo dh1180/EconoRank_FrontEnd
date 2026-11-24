@@ -150,15 +150,15 @@ export default async function Compare({
           <button className="button selection-apply-btn" type="submit">
             {t.apply}
           </button>
-          <fieldset>
-            <legend>{t.country}</legend>
+          <div className="selection-body" role="group" aria-label={t.country}>
+            <p className="selection-legend">{t.country}</p>
             <CountrySelector
               key={selected.join(",")}
               countries={countries}
               initial={selected}
               lang={lang}
             />
-          </fieldset>
+          </div>
         </form>
 
         <section className="comparison-results" aria-live="polite">

@@ -1515,9 +1515,13 @@ td.numeric .value-status {
 }
 
 .selection {
-  padding: 20px;
+  padding: 16px 18px;
   position: sticky;
-  top: 86px;
+  top: 82px;
+  max-height: calc(100vh - 98px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .selection-heading {
@@ -4720,23 +4724,49 @@ html[data-theme="dark"] .admin-tab.active {
   color: #ffffff;
 }
 
-/* Compare sidebar single-scroll polish & chart direct end-labels */
-.selection fieldset {
-  display: block;
+/* Compare sidebar viewport-fit single-scroll layout */
+.selection-heading {
+  flex-shrink: 0;
+  margin-bottom: 10px;
 }
-.selection .country-options,
-.selection .selector-list {
-  height: auto;
-  max-height: 220px;
-  overflow-y: auto;
-  align-content: start;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 6px;
+.selection-fields {
+  flex-shrink: 0;
+  margin-bottom: 10px;
 }
 .selection .selection-apply-btn {
   display: block;
   width: 100%;
-  margin: 0 0 16px;
+  flex-shrink: 0;
+  margin: 0 0 12px;
+}
+.selection-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.selection-legend {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+  flex-shrink: 0;
+}
+.selection-body > .field-label,
+.selection-body > input,
+.selection-body > .selection-counter,
+.selection-body > .selected-countries {
+  flex-shrink: 0;
+}
+.selection .country-options,
+.selection .selector-list {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 84px;
+  max-height: none;
+  overflow-y: auto;
+  align-content: start;
+  padding-bottom: 4px;
 }
 
 .compare-readout-chip {
