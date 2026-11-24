@@ -4730,15 +4730,21 @@ html[data-theme="dark"] .admin-tab.active {
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  overflow: hidden;
+  min-inline-size: 0;
 }
 .selection .country-options,
 .selection .selector-list {
-  flex: 1;
-  min-height: 150px;
-  max-height: 260px;
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 210px;
   overflow-y: auto;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
 }
 .selection .button {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
   margin-top: 14px;
 }
