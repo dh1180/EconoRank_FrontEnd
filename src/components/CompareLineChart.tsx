@@ -58,7 +58,8 @@ export default function CompareLineChart({
   const ko = lang === "ko";
   const currentYear = new Date().getUTCFullYear();
   const [metric, setMetric] = useState<ChartMetric>("gdp");
-  const [range, setRange] = useState<RangeKey>("all");
+  const [startYear, setStartYear] = useState<number>(1980);
+  const [endYear, setEndYear] = useState<number>(currentYear);
   const [logScale, setLogScale] = useState(false);
   const [hiddenCodes, setHiddenCodes] = useState<Set<string>>(new Set());
   const [hoveredYear, setHoveredYear] = useState<number | null>(null);
@@ -114,7 +115,7 @@ export default function CompareLineChart({
     return map;
   }, [countries, observations, metric]);
 
-  const allYears = useMemo(() => {
+  const availableYears = useMemo(() => {
     const set = new Set<number>();
     for (const c of countries) {
       if (hiddenCodes.has(c.code)) continue;
@@ -122,20 +123,22 @@ export default function CompareLineChart({
       if (!ym) continue;
       for (const y of ym.keys()) set.add(y);
     }
-    const sorted = [...set].sort((a, b) => a - b);
-    const minY =
-      range === "all"
-        ? 1980
-        : range === "1990"
-          ? 1990
-          : range === "2000"
-            ? 2000
-            : range === "10y"
-              ? currentYear - 10
-              : 1980;
-    const maxY = range === "forecast" ? 2035 : currentYear;
-    return sorted.filter((y) => y >= minY && y <= maxY);
-  }, [countries, hiddenCodes, pointsByCountry, range, currentYear]);
+    return [...set].sort((a, b) => a - b);
+  }, [countries, hiddenCodes, pointsByCountry]);
+
+  const effectiveStart = Math.max(
+    availableYears[0] ?? 1980,
+    Math.min(startYear, (availableYears[availableYears.length - 1] ?? currentYear) - 1),
+  );
+  const effectiveEnd = Math.min(
+    availableYears[availableYears.length - 1] ?? currentYear,
+    Math.max(endYear, effectiveStart + 1),
+  );
+
+  const allYears = useMemo(
+    () => availableYears.filter((y) => y >= effectiveStart && y <= effectiveEnd),
+    [availableYears, effectiveStart, effectiveEnd],
+  );
 
   if (allYears.length < 2) return null;
 
@@ -272,12 +275,19 @@ export default function CompareLineChart({
     { key: "pop", label: popLabel(lang) },
   ];
 
-  const rangeTabs: { key: RangeKey; label: string }[] = [
-    { key: "all", label: ko ? "전체 (1980~)" : "All (1980–)" },
-    { key: "1990", label: "1990~" },
-    { key: "2000", label: "2000~" },
-    { key: "10y", label: ko ? "최근 10년" : "10Y" },
-    { key: "forecast", label: ko ? "전망 포함 (~2031)" : "Forecast (~2031)" },
+  const maxAvailYear = availableYears[availableYears.length - 1] ?? 2031;
+  const minAvailYear = availableYears[0] ?? 1980;
+  const rangeTabs: { key: RangeKey; label: string; from: number; to: number }[] = [
+    { key: "all", label: ko ? "전체" : "All", from: minAvailYear, to: currentYear },
+    { key: "1990", label: "1990~", from: 1990, to: currentYear },
+    { key: "2000", label: "2000~", from: 2000, to: currentYear },
+    { key: "10y", label: ko ? "최근 10년" : "10Y", from: currentYear - 10, to: currentYear },
+    {
+      key: "forecast",
+      label: ko ? `전망 (~${maxAvailYear})` : `Forecast (~${maxAvailYear})`,
+      from: minAvailYear,
+      to: maxAvailYear,
+    },
   ];
 
   function toggleCountry(code: string) {
@@ -293,10 +303,9 @@ export default function CompareLineChart({
   }
 
   const sliceW = Math.max(10, chartW / Math.max(1, allYears.length));
+  const showForecast = effectiveEnd > currentYear;
   const forecastBoundaryX =
-    range === "forecast" && allYears.includes(currentYear)
-      ? xOfYear(currentYear)
-      : null;
+    showForecast && allYears.includes(currentYear) ? xOfYear(currentYear) : null;
 
   return (
     <section className="panel compare-chart-panel">
@@ -328,28 +337,82 @@ export default function CompareLineChart({
 
       <div className="compare-chart-controls">
         <div className="compare-range-pills">
-          {rangeTabs.map((rt) => (
-            <button
-              key={rt.key}
-              type="button"
-              className={`pill ${range === rt.key ? "active" : ""}`}
-              onClick={() => {
-                setRange(rt.key);
+          {rangeTabs.map((rt) => {
+            const isActive = effectiveStart === rt.from && effectiveEnd === rt.to;
+            return (
+              <button
+                key={rt.key}
+                type="button"
+                className={`pill ${isActive ? "active" : ""}`}
+                onClick={() => {
+                  setStartYear(rt.from);
+                  setEndYear(rt.to);
+                  setHoveredYear(null);
+                }}
+              >
+                {rt.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="compare-chart-right-controls">
+          <div
+            className="compare-custom-range"
+            aria-label={ko ? "비교 기간 직접 선택" : "Custom year range"}
+          >
+            <select
+              aria-label={ko ? "시작 연도" : "Start year"}
+              value={effectiveStart}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setStartYear(next);
+                if (next >= effectiveEnd) {
+                  setEndYear(Math.min(maxAvailYear, next + 1));
+                }
                 setHoveredYear(null);
               }}
             >
-              {rt.label}
-            </button>
-          ))}
+              {availableYears
+                .filter((y) => y < maxAvailYear)
+                .map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+            </select>
+            <span className="muted" aria-hidden="true">
+              –
+            </span>
+            <select
+              aria-label={ko ? "종료 연도" : "End year"}
+              value={effectiveEnd}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setEndYear(next);
+                if (next <= effectiveStart) {
+                  setStartYear(Math.max(minAvailYear, next - 1));
+                }
+                setHoveredYear(null);
+              }}
+            >
+              {availableYears
+                .filter((y) => y > minAvailYear)
+                .map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            className={`pill ${logScale ? "active" : ""}`}
+            onClick={() => setLogScale((v) => !v)}
+            title={ko ? "로그 스케일 전환 (장기 성장률 비교에 유용)" : "Toggle logarithmic scale"}
+          >
+            {logScale ? (ko ? "로그 축 ON" : "Log ON") : ko ? "로그 축" : "Log scale"}
+          </button>
         </div>
-        <button
-          type="button"
-          className={`pill ${logScale ? "active" : ""}`}
-          onClick={() => setLogScale((v) => !v)}
-          title={ko ? "로그 스케일 전환 (장기 성장률 비교에 유용)" : "Toggle logarithmic scale"}
-        >
-          {logScale ? (ko ? "로그 축 ON" : "Log ON") : ko ? "로그 축" : "Log scale"}
-        </button>
       </div>
 
       <div className="compare-chart-readout">
@@ -457,8 +520,7 @@ export default function CompareLineChart({
                 .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
                 .join(" ");
 
-            const splitForecast = range === "forecast";
-            const firstForecast = splitForecast
+            const firstForecast = showForecast
               ? pts.findIndex((p) => p.year > currentYear)
               : -1;
             const actualPts =

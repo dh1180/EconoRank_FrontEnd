@@ -4782,3 +4782,30 @@ html[data-theme="dark"] .admin-tab.active {
 .site-header {
   background: color-mix(in srgb, var(--canvas) 95%, transparent);
 }
+
+.compare-chart-right-controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+.compare-custom-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+.compare-custom-range select {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 3px 2px;
+  cursor: pointer;
+  outline: none;
+}
