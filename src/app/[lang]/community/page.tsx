@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale, dictionary } from "@/lib/i18n";
 import { buildPageMetadata } from "@/lib/seo";
+import { api, type CompanyFeed, type RankingPage } from "@/lib/api";
 import Community from "@/components/Community";
 
 export async function generateMetadata({
@@ -30,20 +31,30 @@ export default async function CommunityPage({
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const t = dictionary(lang);
   const q = await searchParams;
+
+  let topCompanies: CompanyFeed["items"] = [];
+  let topGdp: RankingPage["items"] = [];
+  let gdpYear = new Date().getUTCFullYear();
+
+  try {
+    const [companiesRes, gdpRes] = await Promise.all([
+      api<CompanyFeed>("/companies?limit=5"),
+      api<RankingPage>("/rankings?indicator=gdp&source=imf&page=0&size=5"),
+    ]);
+    topCompanies = companiesRes.items ?? [];
+    topGdp = gdpRes.items ?? [];
+    if (gdpRes.year) gdpYear = gdpRes.year;
+  } catch {}
+
   return (
-    <>
-      <section className="page-heading community-page-heading">
-        <p className="eyebrow">ECONORANK COMMUNITY</p>
-        <h1>{t.discussion}</h1>
-        <p className="lead">{t.discussionText}</p>
-      </section>
-      <Community
-        lang={lang}
-        initialPost={q.post || null}
-        initialAttach={q.attach || null}
-      />
-    </>
+    <Community
+      lang={lang}
+      initialPost={q.post || null}
+      initialAttach={q.attach || null}
+      topCompanies={topCompanies}
+      topGdp={topGdp}
+      gdpYear={gdpYear}
+    />
   );
 }

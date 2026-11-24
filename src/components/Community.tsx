@@ -1,8 +1,11 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { amount, metricAmount, type Company, type Ranking } from "@/lib/api";
 import { countryName } from "@/lib/geography";
 import { dictionary, type Locale } from "@/lib/i18n";
 import CountryFlag from "@/components/CountryFlag";
+import CompanyLogo from "@/components/CompanyLogo";
 import { StatPicker, StatText } from "@/components/StatEmbed";
 
 type Member = {
@@ -23,6 +26,7 @@ type Post = {
   createdAt: string;
   spaceId: string;
   likeCount?: number;
+  commentCount?: number;
   liked?: boolean;
 };
 type Comment = {
@@ -153,19 +157,49 @@ function AuthorTag({
   );
 }
 
+function extractStatChips(body: string, lang: Locale): string[] {
+  const t = dictionary(lang);
+  const matches = body.match(
+    /\[\[stat:(?:country:[A-Z]{3}:(?:gdp|gdppc|ppp):\d{4}|company:[A-Za-z0-9.\-^]{1,20})\]\]/g,
+  );
+  if (!matches) return [];
+  return matches.slice(0, 4).map((tok) => {
+    const segs = tok.slice(7, -2).split(":");
+    if (segs[0] === "country" && segs.length === 4) {
+      const [, code, metric, year] = segs;
+      const mLabel = metric === "gdppc" ? t.gdppc : metric === "ppp" ? t.ppp : t.gdp;
+      return `${countryName(code, code, lang)} · ${mLabel} ${year}`;
+    }
+    if (segs[0] === "company" && segs.length === 2) {
+      return segs[1];
+    }
+    return t.statCardTag;
+  });
+}
+
 export default function Community({
   lang,
   initialPost,
   initialAttach,
+  topCompanies = [],
+  topGdp = [],
+  gdpYear = new Date().getUTCFullYear(),
 }: {
   lang: Locale;
   initialPost: string | null;
   initialAttach?: string | null;
+  topCompanies?: Company[];
+  topGdp?: Ranking[];
+  gdpYear?: number;
 }) {
   const t = dictionary(lang);
+  const isKo = lang === "ko";
+  const isJa = lang === "ja";
   const [member, setMember] = useState<Member | null>(null),
     [geoCountry, setGeoCountry] = useState<string | null>(null),
-    [page, setPage] = useState(0);
+    [page, setPage] = useState(0),
+    [sort, setSort] = useState<"latest" | "popular">("latest"),
+    [searchQuery, setSearchQuery] = useState("");
   const [feed, setFeed] = useState<Feed>({ items: [], total: 0 }),
     [selected, setSelected] = useState<string | null>(initialPost),
     [thread, setThread] = useState<{ post: Post; comments: Comment[] } | null>(
@@ -180,6 +214,7 @@ export default function Community({
       : "";
   const [auth, setAuth] = useState<"login" | "register" | null>(null),
     [writing, setWriting] = useState(Boolean(safeAttach)),
+    [draftTitle, setDraftTitle] = useState(""),
     [draftBody, setDraftBody] = useState(safeAttach),
     [replyBody, setReplyBody] = useState(""),
     [error, setError] = useState(""),
@@ -321,7 +356,9 @@ export default function Community({
         ).then((data) => {
           if (!cancelled) setThread(data);
         })
-      : read<Feed>(`/posts?space=global&page=${page}&size=20`).then((data) => {
+      : read<Feed>(
+          `/posts?space=global&page=${page}&size=20&sort=${sort}`,
+        ).then((data) => {
           if (!cancelled) {
             setFeed(data);
             setThread(null);
@@ -337,7 +374,78 @@ export default function Community({
     return () => {
       cancelled = true;
     };
-  }, [page, selected, revision, member]);
+  }, [page, sort, selected, revision, member]);
+
+  function startTopicWith(tokens: string[], suggestedTitle = "") {
+    if (selected) openPost(null);
+    setWriting(true);
+    if (suggestedTitle) setDraftTitle(suggestedTitle);
+    const block = tokens.map((tok) => `[[stat:${tok}]]`).join("\n") + "\n\n";
+    setDraftBody((prev) =>
+      prev.trim() ? `${prev.trimEnd()}\n${block}` : block,
+    );
+    setTimeout(() => {
+      contentTopRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 30);
+  }
+
+  const visibleFeedItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return feed.items;
+    return feed.items.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.body.toLowerCase().includes(q) ||
+        p.author.toLowerCase().includes(q),
+    );
+  }, [feed.items, searchQuery]);
+
+  const quickTopics = [
+    {
+      label: isKo
+        ? "🇰🇷 한국 vs 🇯🇵 일본 1인당 GDP"
+        : isJa
+          ? "🇯🇵 日本 vs 🇰🇷 韓国 1人当たりGDP"
+          : "🇰🇷 Korea vs 🇯🇵 Japan GDP per capita",
+      title: isKo
+        ? `${gdpYear}년 한국 vs 일본 1인당 GDP 비교`
+        : isJa
+          ? `${gdpYear}年 日本 vs 韓国 1人当たりGDP比較`
+          : `Korea vs Japan GDP per capita (${gdpYear})`,
+      tokens: [`country:KOR:gdppc:${gdpYear}`, `country:JPN:gdppc:${gdpYear}`],
+    },
+    {
+      label: isKo
+        ? "📈 삼성전자 vs SK하이닉스 시총"
+        : isJa
+          ? "📈 Samsung vs SK Hynix 時価総額"
+          : "📈 Apple vs Nvidia Market Cap",
+      title: isKo
+        ? "삼성전자 vs SK하이닉스 실시간 시가총액"
+        : isJa
+          ? "Samsung vs SK Hynix 時価総額比較"
+          : "Apple vs Nvidia live market cap",
+      tokens: isKo || isJa
+        ? ["company:005930.KS", "company:000660.KS"]
+        : ["company:AAPL", "company:NVDA"],
+    },
+    {
+      label: isKo
+        ? "🇺🇸 미국 vs 🇨🇳 중국 명목 GDP"
+        : isJa
+          ? "🇺🇸 米国 vs 🇨🇳 中国 名目GDP"
+          : "🇺🇸 US vs 🇨🇳 China Nominal GDP",
+      title: isKo
+        ? `${gdpYear}년 미국 vs 중국 GDP 격차 전망`
+        : isJa
+          ? `${gdpYear}年 米国 vs 中国 GDP推移`
+          : `US vs China Nominal GDP outlook (${gdpYear})`,
+      tokens: [`country:USA:gdp:${gdpYear}`, `country:CHN:gdp:${gdpYear}`],
+    },
+  ];
 
   useEffect(() => {
     if (member) {
@@ -479,8 +587,42 @@ export default function Community({
   }
 
   return (
-    <div className="community-layout-single">
-      <section className="discussion-content" ref={contentTopRef}>
+    <>
+      <section className="community-hero">
+        <div className="community-hero-copy">
+          <div className="hero-badge">
+            <span className="sync-dot" aria-hidden="true" />
+            <span>ECONORANK COMMUNITY</span>
+          </div>
+          <h1>{t.discussion}</h1>
+          <p className="lead">{t.discussionText}</p>
+        </div>
+        <div className="community-hero-topics">
+          <span className="snapshot-kicker">
+            {isKo
+              ? "원클릭 지표 토론 시작"
+              : isJa
+                ? "ワンクリックで指標トーク開始"
+                : "QUICK DATA TOPICS"}
+          </span>
+          <div className="quick-topics">
+            {quickTopics.map((topic) => (
+              <button
+                key={topic.label}
+                type="button"
+                className="quick-topic-btn"
+                onClick={() => startTopicWith(topic.tokens, topic.title)}
+              >
+                <span>{topic.label}</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="community-grid">
+        <section className="discussion-content" ref={contentTopRef}>
         {error && (
           <p className="notice error" role="alert">
             {error}
@@ -708,6 +850,7 @@ export default function Community({
                           guestName: data.get("guestName") || "",
                           guestPassword: data.get("guestPassword"),
                         });
+                    setDraftTitle("");
                     setDraftBody("");
                     setWriting(false);
                     openPost(created.id);
@@ -738,7 +881,13 @@ export default function Community({
                 )}
                 <label>
                   {t.title}
-                  <input name="title" maxLength={160} required />
+                  <input
+                    name="title"
+                    maxLength={160}
+                    value={draftTitle}
+                    onChange={(e) => setDraftTitle(e.target.value)}
+                    required
+                  />
                 </label>
                 <StatPicker
                   lang={lang}
@@ -946,17 +1095,61 @@ export default function Community({
             ) : (
               !selected && (
                 <>
+                  <div className="feed-toolbar">
+                    <div className="sort-pills" role="group">
+                      <button
+                        type="button"
+                        className={`sort-pill ${sort === "latest" ? "active" : ""}`}
+                        onClick={() => {
+                          setSort("latest");
+                          setPage(0);
+                        }}
+                      >
+                        {isKo ? "최신순" : isJa ? "新着順" : "Latest"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`sort-pill ${sort === "popular" ? "active" : ""}`}
+                        onClick={() => {
+                          setSort("popular");
+                          setPage(0);
+                        }}
+                      >
+                        {isKo ? "인기순" : isJa ? "人気順" : "Popular"}
+                      </button>
+                    </div>
+                    <input
+                      type="search"
+                      className="feed-search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={
+                        isKo
+                          ? "제목·내용·작성자 검색..."
+                          : isJa
+                            ? "タイトル・本文・投稿者を検索..."
+                            : "Search posts..."
+                      }
+                    />
+                  </div>
+
                   <div className="post-feed">
-                    {feed.items.length === 0 ? (
+                    {visibleFeedItems.length === 0 ? (
                       <p className="panel editor">{t.noPosts}</p>
                     ) : (
-                      feed.items.map((p) => {
+                      visibleFeedItems.map((p) => {
                         const pKey = `post:${p.id}:${lang}`;
                         const tr = translations[pKey];
                         const showingTr = Boolean(tr?.show);
                         const trErr = translateError[pKey];
                         const displayTitle = showingTr && tr?.title ? tr.title : p.title;
                         const displayBody = showingTr && tr ? tr.body : p.body;
+                        const statChips = extractStatChips(p.body, lang);
+                        const cleanExcerpt = displayBody
+                          .replace(/\[\[stat:[^\]]+\]\]/g, "")
+                          .replace(/\s+/g, " ")
+                          .trim()
+                          .slice(0, 180);
                         return (
                           <article
                             className="panel post-card post-card-clickable"
@@ -991,11 +1184,18 @@ export default function Community({
                                 {displayTitle}
                               </button>
                             </h3>
-                            <p className="post-excerpt">
-                              {displayBody
-                                .replace(/\[\[stat:[^\]]+\]\]/g, t.statCardTag)
-                                .slice(0, 180)}
-                            </p>
+                            {statChips.length > 0 && (
+                              <div className="stat-chip-row">
+                                {statChips.map((chip, idx) => (
+                                  <span key={idx} className="stat-chip mono">
+                                    📊 {chip}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {cleanExcerpt && (
+                              <p className="post-excerpt">{cleanExcerpt}</p>
+                            )}
                             <div
                               className="translate-bar"
                               onClick={(e) => e.stopPropagation()}
@@ -1009,6 +1209,9 @@ export default function Community({
                                 {p.liked ? "♥" : "♡"}{" "}
                                 <span className="mono">{p.likeCount ?? 0}</span>
                               </button>
+                              <span className="comment-count-pill mono">
+                                💬 {p.commentCount ?? 0}
+                              </span>
                               {p.language !== lang && (
                                 <>
                                   <button
@@ -1072,7 +1275,110 @@ export default function Community({
             )}
           </>
         )}
-      </section>
-    </div>
+        </section>
+
+        <aside className="community-sidebar">
+          {topCompanies.length > 0 && (
+            <section className="panel mini-board">
+              <div className="mini-board-head">
+                <div>
+                  <p className="eyebrow">LIVE MARKET CAP</p>
+                  <h3>
+                    {isKo
+                      ? "글로벌 시총 TOP 5"
+                      : isJa
+                        ? "世界時価総額 TOP 5"
+                        : "Global Cap Top 5"}
+                  </h3>
+                </div>
+                <Link href={`/${lang}/companies`} className="mini-board-more">
+                  {t.all} →
+                </Link>
+              </div>
+              <ol className="mini-board-list">
+                {topCompanies.map((c) => (
+                  <li key={`${c.rank}-${c.symbol}`} className="mini-board-row">
+                    <div className="mini-board-left">
+                      <span className="mini-rank mono">
+                        {c.rank.toString().padStart(2, "0")}
+                      </span>
+                      <CompanyLogo symbol={c.symbol} name={c.name} size="sm" />
+                      <div className="mini-board-meta">
+                        <strong>{c.name}</strong>
+                        <small className="mono">{amount(c.marketCap, lang)}</small>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="mini-discuss-btn"
+                      title={t.discussMetric}
+                      onClick={() =>
+                        startTopicWith([`company:${c.symbol}`], `${c.name} (${c.symbol}) `)
+                      }
+                    >
+                      + {isKo ? "토론" : isJa ? "議論" : "Post"}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {topGdp.length > 0 && (
+            <section className="panel mini-board">
+              <div className="mini-board-head">
+                <div>
+                  <p className="eyebrow">IMF WEO · {gdpYear}</p>
+                  <h3>
+                    {isKo
+                      ? "세계 GDP TOP 5"
+                      : isJa
+                        ? "世界GDP TOP 5"
+                        : "World GDP Top 5"}
+                  </h3>
+                </div>
+                <Link href={`/${lang}`} className="mini-board-more">
+                  {t.all} →
+                </Link>
+              </div>
+              <ol className="mini-board-list">
+                {topGdp.map((r) => (
+                  <li key={r.code} className="mini-board-row">
+                    <Link
+                      href={`/${lang}/countries/${r.code}`}
+                      className="mini-board-left"
+                    >
+                      <span className="mini-rank mono">
+                        {r.rank.toString().padStart(2, "0")}
+                      </span>
+                      <CountryFlag code={r.code} size="sm" />
+                      <div className="mini-board-meta">
+                        <strong>{countryName(r.code, r.name, lang)}</strong>
+                        <small className="mono">
+                          {metricAmount(r.value, "gdp", lang)}
+                        </small>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      className="mini-discuss-btn"
+                      title={t.discussMetric}
+                      onClick={() =>
+                        startTopicWith(
+                          [`country:${r.code}:gdp:${gdpYear}`],
+                          `${countryName(r.code, r.name, lang)} ${gdpYear} GDP `,
+                        )
+                      }
+                    >
+                      + {isKo ? "토론" : isJa ? "議論" : "Post"}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </aside>
+      </div>
+    </>
   );
 }
