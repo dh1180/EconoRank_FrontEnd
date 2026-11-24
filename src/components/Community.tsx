@@ -22,6 +22,8 @@ type Post = {
   anonymous?: boolean;
   createdAt: string;
   spaceId: string;
+  likeCount?: number;
+  liked?: boolean;
 };
 type Comment = {
   id: string;
@@ -250,10 +252,44 @@ export default function Community({
   const vpnNoticeTitle = t.vpnTitle;
   const vpnNoticeBody = t.vpnBody;
 
+  async function toggleLike(postId: string) {
+    if (!member) {
+      window.dispatchEvent(new Event("econorank-open-login"));
+      return;
+    }
+    try {
+      const res = await mutate<{ liked: boolean; likeCount: number }>(
+        `/posts/${encodeURIComponent(postId)}/like`,
+        "POST",
+      );
+      setFeed((prev) => ({
+        ...prev,
+        items: prev.items.map((p) =>
+          p.id === postId
+            ? { ...p, liked: res.liked, likeCount: res.likeCount }
+            : p,
+        ),
+      }));
+      setThread((prev) =>
+        prev && prev.post.id === postId
+          ? {
+              ...prev,
+              post: { ...prev.post, liked: res.liked, likeCount: res.likeCount },
+            }
+          : prev,
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Request failed");
+    }
+  }
+
   useEffect(() => {
-    read<Member>("/auth/me")
-      .then(setMember)
-      .catch(() => setMember(null));
+    const syncMember = () =>
+      read<Member>("/auth/me")
+        .then(setMember)
+        .catch(() => setMember(null));
+    syncMember();
+    window.addEventListener("econorank-auth-change", syncMember);
     read<{ countryCode?: string | null }>("/geo")
       .then((g) => setGeoCountry(g?.countryCode ?? null))
       .catch(() => {});
@@ -271,6 +307,8 @@ export default function Community({
           : "Google Sign-In failed. Please try again.",
       );
     }
+    return () =>
+      window.removeEventListener("econorank-auth-change", syncMember);
   }, [lang]);
 
   useEffect(() => {
@@ -441,121 +479,7 @@ export default function Community({
   }
 
   return (
-    <div className="community-layout">
-      <aside>
-        <section className="panel account-panel">
-          <div className="account-header">
-            {member && (
-              <span className="avatar-badge" aria-hidden="true">
-                {member.displayName.slice(0, 1).toUpperCase()}
-              </span>
-            )}
-            <div>
-              <h2>{member ? member.displayName : t.account}</h2>
-              {member?.countryCode && (
-                <span className="member-country-pill">
-                  <CountryFlag code={member.countryCode} size="sm" />
-                  <span>
-                    {countryName(member.countryCode, member.countryCode, lang)}
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
-          {member ? (
-            <>
-              <button
-                className="small-button"
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    await mutate("/auth/logout", "POST");
-                    setMember(null);
-                    setAdmin(false);
-                  })
-                }
-              >
-                {t.signOut}
-              </button>
-              {member.role === "ADMIN" && (
-                <button
-                  className="small-button"
-                  onClick={() => setAdmin(!admin)}
-                >
-                  {t.admin}
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="stack">
-              <a
-                href={`/api/auth/google/start?lang=${encodeURIComponent(lang)}`}
-                className="google-login-btn"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="#4285F4"
-                    d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
-                  />
-                </svg>
-                <span>
-                  {lang === "ko"
-                    ? "Google로 계속하기"
-                    : lang === "ja"
-                      ? "Googleで続行"
-                      : "Continue with Google"}
-                </span>
-              </a>
-              <p className="muted">{t.loginNeeded}</p>
-            </div>
-          )}
-        </section>
-
-        <section className="panel account-panel">
-          <div className="vpn-notice" role="note">
-            <strong>{vpnNoticeTitle}</strong>
-            <p>{vpnNoticeBody}</p>
-          </div>
-          <p className="guidelines" style={{ marginTop: 14, marginBottom: 0 }}>
-            {t.guidelines}
-          </p>
-        </section>
-
-        {blocks.length > 0 && (
-          <section className="panel account-panel">
-            <h3>{t.blocked}</h3>
-            {blocks.map((b) => (
-              <p key={b.id}>
-                {b.displayName}{" "}
-                <button
-                  className="text-button"
-                  disabled={busy}
-                  onClick={() =>
-                    run(async () => {
-                      await mutate(`/blocks/${b.id}`, "DELETE");
-                    })
-                  }
-                >
-                  {t.unblock}
-                </button>
-              </p>
-            ))}
-          </section>
-        )}
-      </aside>
-
+    <div className="community-layout-single">
       <section className="discussion-content" ref={contentTopRef}>
         {error && (
           <p className="notice error" role="alert">
@@ -873,6 +797,15 @@ export default function Community({
                       <div className="translate-bar">
                         <button
                           type="button"
+                          className={`like-btn ${thread.post.liked ? "liked" : ""}`}
+                          onClick={() => toggleLike(thread.post.id)}
+                          aria-pressed={Boolean(thread.post.liked)}
+                        >
+                          {thread.post.liked ? "♥" : "♡"}{" "}
+                          <span className="mono">{thread.post.likeCount ?? 0}</span>
+                        </button>
+                        <button
+                          type="button"
                           className="translate-btn"
                           disabled={translatingKey === pKey}
                           onClick={() => toggleTranslate("post", thread.post.id)}
@@ -1063,29 +996,40 @@ export default function Community({
                                 .replace(/\[\[stat:[^\]]+\]\]/g, t.statCardTag)
                                 .slice(0, 180)}
                             </p>
-                            {p.language !== lang && (
-                              <div
-                                className="translate-bar"
-                                onClick={(e) => e.stopPropagation()}
+                            <div
+                              className="translate-bar"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                className={`like-btn ${p.liked ? "liked" : ""}`}
+                                onClick={() => toggleLike(p.id)}
+                                aria-pressed={Boolean(p.liked)}
                               >
-                                <button
-                                  type="button"
-                                  className="translate-btn"
-                                  disabled={translatingKey === pKey}
-                                  onClick={() => toggleTranslate("post", p.id)}
-                                >
-                                  🌐{" "}
-                                  {translatingKey === pKey
-                                    ? t.translating
-                                    : showingTr
-                                      ? t.showOriginal
-                                      : t.translateBtn}
-                                </button>
-                                {trErr && (
-                                  <span className="translate-error">{trErr}</span>
-                                )}
-                              </div>
-                            )}
+                                {p.liked ? "♥" : "♡"}{" "}
+                                <span className="mono">{p.likeCount ?? 0}</span>
+                              </button>
+                              {p.language !== lang && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="translate-btn"
+                                    disabled={translatingKey === pKey}
+                                    onClick={() => toggleTranslate("post", p.id)}
+                                  >
+                                    🌐{" "}
+                                    {translatingKey === pKey
+                                      ? t.translating
+                                      : showingTr
+                                        ? t.showOriginal
+                                        : t.translateBtn}
+                                  </button>
+                                  {trErr && (
+                                    <span className="translate-error">{trErr}</span>
+                                  )}
+                                </>
+                              )}
+                            </div>
                             {actions("post", p)}
                           </article>
                         );

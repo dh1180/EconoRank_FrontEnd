@@ -3,6 +3,7 @@ import { dictionary, type Locale } from "@/lib/i18n";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NavLinks from "./NavLinks";
 import ThemeToggle from "./ThemeToggle";
+import HeaderAuth from "./HeaderAuth";
 
 export default function Shell({
   lang,
@@ -47,6 +48,7 @@ export default function Shell({
             }}
           />
           <div className="header-controls">
+            <HeaderAuth lang={lang} />
             <ThemeToggle />
             <LanguageSwitcher lang={lang} />
           </div>

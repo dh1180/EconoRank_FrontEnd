@@ -3698,3 +3698,246 @@ html[data-theme="dark"] .exchange-pill.active small {
     gap: 12px 16px;
   }
 }
+
+/* Header Auth Controls & Login Modal */
+.header-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
+}
+
+.header-auth-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.header-auth-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.header-auth-btn.primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #ffffff;
+}
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(11, 22, 24, 0.56);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.auth-modal {
+  width: min(440px, 100%);
+  padding: 28px;
+  display: grid;
+  gap: 16px;
+  box-shadow: var(--shadow-hero);
+}
+
+.auth-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-modal-head h2 {
+  margin: 4px 0 0;
+  font-size: 1.45rem;
+}
+
+.auth-modal-close {
+  border: 1px solid var(--line);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.auth-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+/* Full-width Community & Like Button */
+.community-layout-single {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-subtle);
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
+}
+
+.like-btn:hover {
+  border-color: #e11d48;
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.like-btn.liked {
+  border-color: #e11d48;
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.1);
+}
+
+/* MyPage */
+.mypage-wrap {
+  max-width: 860px;
+  margin: 0 auto 36px;
+  display: grid;
+  gap: 18px;
+}
+
+.mypage-login-card {
+  max-width: 480px;
+  margin: 24px auto;
+  padding: 32px;
+  display: grid;
+  gap: 16px;
+}
+
+.mypage-login-card h1 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.mypage-profile {
+  padding: 26px 28px;
+  display: grid;
+  gap: 16px;
+}
+
+.mypage-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mypage-profile-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.mypage-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 1.2rem;
+}
+
+.mypage-nick-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--ink-soft);
+}
+
+.mypage-nick-row {
+  display: flex;
+  gap: 10px;
+}
+
+.mypage-nick-row input {
+  flex: 1;
+}
+
+.mypage-activity {
+  overflow: hidden;
+}
+
+.mypage-list {
+  display: grid;
+}
+
+.mypage-item {
+  display: grid;
+  gap: 6px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--line);
+  transition: background-color 0.15s ease;
+}
+
+.mypage-item:hover {
+  background: var(--surface-subtle);
+  color: inherit;
+}
+
+.mypage-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.mypage-item-top strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.mypage-comment-post {
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--accent);
+}
+
+.mypage-empty {
+  padding: 32px 24px;
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .header-auth-btn {
+    padding: 5px 9px;
+    font-size: 0.74rem;
+  }
+
+  .mypage-profile {
+    padding: 20px 18px;
+  }
+
+  .mypage-item {
+    padding: 16px 18px;
+  }
+}
