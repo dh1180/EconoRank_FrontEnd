@@ -24,6 +24,7 @@ test("buildPageMetadata creates OpenGraph and Twitter cards with EconoRank brand
     description: "대한민국 GDP 및 1인당 GDP 추이",
   });
   assert.equal(meta.openGraph?.siteName, "EconoRank");
+  assert.ok(Array.isArray(meta.openGraph?.images) && meta.openGraph.images.length > 0);
   assert.equal(meta.twitter?.card, "summary_large_image");
   assert.equal(meta.alternates?.canonical, "/ko/countries/KOR");
 });

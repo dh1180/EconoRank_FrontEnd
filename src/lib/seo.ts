@@ -73,11 +73,20 @@ export function buildPageMetadata({
       siteName: "EconoRank",
       type: "website",
       locale: lang,
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: "EconoRank · Global GDP & Live Company Market Cap Rankings",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} | EconoRank`,
       description,
+      images: ["/opengraph-image"],
     },
     ...(noIndex ? { robots: { index: false, follow: true } } : {}),
   };
