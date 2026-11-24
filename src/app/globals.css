@@ -4565,9 +4565,9 @@ html[data-theme="dark"] .sort-pill.active {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
+  padding: 0.65rem 0.95rem;
   border-radius: 12px;
-  background: var(--bg);
+  background: var(--surface-subtle);
   border: 1px solid var(--line);
   margin-bottom: 0.85rem;
 }
@@ -4611,14 +4611,19 @@ html[data-theme="dark"] .sort-pill.active {
   display: inline-flex;
   align-items: center;
   gap: 0.38rem;
-  padding: 0.3rem 0.68rem;
+  padding: 0.32rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
   color: var(--ink);
+  font-family: inherit;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+}
+.compare-legend-toggle:hover {
+  border-color: var(--accent);
 }
 .compare-legend-toggle i {
   width: 9px;
@@ -4633,4 +4638,85 @@ html[data-theme="dark"] .sort-pill.active {
 .compare-chart-source {
   margin-left: auto;
   font-size: 0.78rem;
+}
+
+/* Shared pill & compact button primitives (Charts, Admin Console) */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pill.active {
+  background: var(--obsidian);
+  border-color: var(--obsidian);
+  color: #ffffff;
+}
+html[data-theme="dark"] .pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+.admin-search {
+  background: var(--surface);
+}
+.admin-tab.active {
+  background: var(--obsidian);
+  border-color: var(--obsidian);
+  color: #ffffff;
+}
+html[data-theme="dark"] .admin-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
 }
