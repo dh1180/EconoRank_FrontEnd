@@ -405,44 +405,20 @@ export default function Community({
 
   const quickTopics = [
     {
-      label: isKo
-        ? "🇰🇷 한국 vs 🇯🇵 일본 1인당 GDP"
-        : isJa
-          ? "🇯🇵 日本 vs 🇰🇷 韓国 1人当たりGDP"
-          : "🇰🇷 Korea vs 🇯🇵 Japan GDP per capita",
-      title: isKo
-        ? `${gdpYear}년 한국 vs 일본 1인당 GDP 비교`
-        : isJa
-          ? `${gdpYear}年 日本 vs 韓国 1人当たりGDP比較`
-          : `Korea vs Japan GDP per capita (${gdpYear})`,
+      label: `🇰🇷🇯🇵 ${t.quickTopic1Label}`,
+      title: `${t.quickTopic1Label} (${gdpYear})`,
       tokens: [`country:KOR:gdppc:${gdpYear}`, `country:JPN:gdppc:${gdpYear}`],
     },
     {
-      label: isKo
-        ? "📈 삼성전자 vs SK하이닉스 시총"
-        : isJa
-          ? "📈 Samsung vs SK Hynix 時価総額"
-          : "📈 Apple vs Nvidia Market Cap",
-      title: isKo
-        ? "삼성전자 vs SK하이닉스 실시간 시가총액"
-        : isJa
-          ? "Samsung vs SK Hynix 時価総額比較"
-          : "Apple vs Nvidia live market cap",
+      label: `📈 ${t.quickTopic2Label}`,
+      title: t.quickTopic2Label,
       tokens: isKo || isJa
         ? ["company:005930.KS", "company:000660.KS"]
         : ["company:AAPL", "company:NVDA"],
     },
     {
-      label: isKo
-        ? "🇺🇸 미국 vs 🇨🇳 중국 명목 GDP"
-        : isJa
-          ? "🇺🇸 米国 vs 🇨🇳 中国 名目GDP"
-          : "🇺🇸 US vs 🇨🇳 China Nominal GDP",
-      title: isKo
-        ? `${gdpYear}년 미국 vs 중국 GDP 격차 전망`
-        : isJa
-          ? `${gdpYear}年 米国 vs 中国 GDP推移`
-          : `US vs China Nominal GDP outlook (${gdpYear})`,
+      label: `🇺🇸🇨🇳 ${t.quickTopic3Label}`,
+      title: `${t.quickTopic3Label} (${gdpYear})`,
       tokens: [`country:USA:gdp:${gdpYear}`, `country:CHN:gdp:${gdpYear}`],
     },
   ];
@@ -598,13 +574,7 @@ export default function Community({
           <p className="lead">{t.discussionText}</p>
         </div>
         <div className="community-hero-topics">
-          <span className="snapshot-kicker">
-            {isKo
-              ? "원클릭 지표 토론 시작"
-              : isJa
-                ? "ワンクリックで指標トーク開始"
-                : "QUICK DATA TOPICS"}
-          </span>
+          <span className="snapshot-kicker">{t.quickTopicsLabel}</span>
           <div className="quick-topics">
             {quickTopics.map((topic) => (
               <button
@@ -1105,7 +1075,7 @@ export default function Community({
                           setPage(0);
                         }}
                       >
-                        {isKo ? "최신순" : isJa ? "新着順" : "Latest"}
+                        {t.sortLatest}
                       </button>
                       <button
                         type="button"
@@ -1115,7 +1085,7 @@ export default function Community({
                           setPage(0);
                         }}
                       >
-                        {isKo ? "인기순" : isJa ? "人気順" : "Popular"}
+                        {t.sortPopular}
                       </button>
                     </div>
                     <input
@@ -1123,13 +1093,7 @@ export default function Community({
                       className="feed-search"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={
-                        isKo
-                          ? "제목·내용·작성자 검색..."
-                          : isJa
-                            ? "タイトル・本文・投稿者を検索..."
-                            : "Search posts..."
-                      }
+                      placeholder={t.searchPostsPlaceholder}
                     />
                   </div>
 
@@ -1283,13 +1247,7 @@ export default function Community({
               <div className="mini-board-head">
                 <div>
                   <p className="eyebrow">LIVE MARKET CAP</p>
-                  <h3>
-                    {isKo
-                      ? "글로벌 시총 TOP 5"
-                      : isJa
-                        ? "世界時価総額 TOP 5"
-                        : "Global Cap Top 5"}
-                  </h3>
+                  <h3>{t.globalCapTop5}</h3>
                 </div>
                 <Link href={`/${lang}/companies`} className="mini-board-more">
                   {t.all} →
@@ -1316,7 +1274,7 @@ export default function Community({
                         startTopicWith([`company:${c.symbol}`], `${c.name} (${c.symbol}) `)
                       }
                     >
-                      + {isKo ? "토론" : isJa ? "議論" : "Post"}
+                      + {t.discussShort}
                     </button>
                   </li>
                 ))}
@@ -1329,13 +1287,7 @@ export default function Community({
               <div className="mini-board-head">
                 <div>
                   <p className="eyebrow">IMF WEO · {gdpYear}</p>
-                  <h3>
-                    {isKo
-                      ? "세계 GDP TOP 5"
-                      : isJa
-                        ? "世界GDP TOP 5"
-                        : "World GDP Top 5"}
-                  </h3>
+                  <h3>{t.worldGdpTop5}</h3>
                 </div>
                 <Link href={`/${lang}`} className="mini-board-more">
                   {t.all} →
@@ -1370,7 +1322,7 @@ export default function Community({
                         )
                       }
                     >
-                      + {isKo ? "토론" : isJa ? "議論" : "Post"}
+                      + {t.discussShort}
                     </button>
                   </li>
                 ))}

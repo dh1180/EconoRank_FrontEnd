@@ -152,7 +152,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
     } catch {}
   }
 
-  const pageTitle = isKo ? "마이페이지" : isJa ? "マイページ" : "My Page";
+  const pageTitle = t.myPage;
 
   if (loading) {
     return (
@@ -244,7 +244,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
 
         <form className="mypage-nick-form" onSubmit={saveNickname}>
           <label>
-            {isKo ? "닉네임 변경" : isJa ? "ニックネーム変更" : "Edit nickname"}
+            {t.editNickname}
             <div className="mypage-nick-row">
               <input
                 value={nickname}
@@ -253,7 +253,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
                 required
               />
               <button className="button" disabled={saving}>
-                {isKo ? "저장" : isJa ? "保存" : "Save"}
+                {t.save}
               </button>
             </div>
           </label>
@@ -282,11 +282,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
               className={`tab-btn ${tab === "posts" ? "active" : ""}`}
               onClick={() => setTab("posts")}
             >
-              {isKo
-                ? `내가 쓴 글 (${posts.length})`
-                : isJa
-                  ? `自分の投稿 (${posts.length})`
-                  : `My Posts (${posts.length})`}
+              {`${t.myPostsTab} (${posts.length})`}
             </button>
             <button
               type="button"
@@ -295,11 +291,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
               className={`tab-btn ${tab === "comments" ? "active" : ""}`}
               onClick={() => setTab("comments")}
             >
-              {isKo
-                ? `내가 쓴 댓글 (${comments.length})`
-                : isJa
-                  ? `自分のコメント (${comments.length})`
-                  : `My Comments (${comments.length})`}
+              {`${t.myCommentsTab} (${comments.length})`}
             </button>
             <button
               type="button"
@@ -308,11 +300,7 @@ export default function MyPage({ lang }: { lang: Locale }) {
               className={`tab-btn ${tab === "likes" ? "active" : ""}`}
               onClick={() => setTab("likes")}
             >
-              {isKo
-                ? `좋아요 누른 글 (${likes.length})`
-                : isJa
-                  ? `いいねした投稿 (${likes.length})`
-                  : `Liked Posts (${likes.length})`}
+              {`${t.likedPostsTab} (${likes.length})`}
             </button>
           </div>
         </div>

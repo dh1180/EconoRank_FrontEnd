@@ -17,13 +17,6 @@ import CountryFlag from "@/components/CountryFlag";
 type ChartMetric = Metric | "pop";
 type RangeKey = "all" | "1990" | "2000" | "10y" | "forecast";
 
-function popLabel(lang: Locale): string {
-  if (lang === "ko") return "인구수";
-  if (lang === "ja") return "人口";
-  if (lang.startsWith("zh")) return "人口";
-  return "Population";
-}
-
 function formatVal(val: number | undefined, metric: ChartMetric, lang: Locale): string {
   if (val === undefined || !Number.isFinite(val)) return "—";
   if (metric === "pop") {
@@ -272,19 +265,19 @@ export default function CompareLineChart({
 
   const metricTabs: { key: ChartMetric; label: string }[] = [
     ...metrics.map((m) => ({ key: m as ChartMetric, label: t[m] })),
-    { key: "pop", label: popLabel(lang) },
+    { key: "pop", label: t.population },
   ];
 
   const maxAvailYear = availableYears[availableYears.length - 1] ?? 2031;
   const minAvailYear = availableYears[0] ?? 1980;
   const rangeTabs: { key: RangeKey; label: string; from: number; to: number }[] = [
-    { key: "all", label: ko ? "전체" : "All", from: minAvailYear, to: currentYear },
+    { key: "all", label: t.rangeAll, from: minAvailYear, to: currentYear },
     { key: "1990", label: "1990~", from: 1990, to: currentYear },
     { key: "2000", label: "2000~", from: 2000, to: currentYear },
-    { key: "10y", label: ko ? "최근 10년" : "10Y", from: currentYear - 10, to: currentYear },
+    { key: "10y", label: t.range10y, from: currentYear - 10, to: currentYear },
     {
       key: "forecast",
-      label: ko ? `전망 (~${maxAvailYear})` : `Forecast (~${maxAvailYear})`,
+      label: `${t.rangeForecast} (~${maxAvailYear})`,
       from: minAvailYear,
       to: maxAvailYear,
     },
@@ -311,9 +304,9 @@ export default function CompareLineChart({
     <section className="panel compare-chart-panel">
       <div className="section-head">
         <div>
-          <p className="eyebrow">{ko ? "장기 추이 비교" : "HISTORICAL COMPARISON"}</p>
+          <p className="eyebrow">{t.historicalComparison}</p>
           <h2>
-            {metric === "pop" ? popLabel(lang) : t[metric]}{" "}
+            {metric === "pop" ? t.population : t[metric]}{" "}
             <span className="trend-range">
               ({minYear}–{maxYear})
             </span>
@@ -358,10 +351,10 @@ export default function CompareLineChart({
         <div className="compare-chart-right-controls">
           <div
             className="compare-custom-range"
-            aria-label={ko ? "비교 기간 직접 선택" : "Custom year range"}
+            aria-label={t.historicalComparison}
           >
             <select
-              aria-label={ko ? "시작 연도" : "Start year"}
+              aria-label={t.startYear}
               value={effectiveStart}
               onChange={(e) => {
                 const next = Number(e.target.value);
@@ -384,7 +377,7 @@ export default function CompareLineChart({
               –
             </span>
             <select
-              aria-label={ko ? "종료 연도" : "End year"}
+              aria-label={t.endYear}
               value={effectiveEnd}
               onChange={(e) => {
                 const next = Number(e.target.value);
@@ -408,9 +401,9 @@ export default function CompareLineChart({
             type="button"
             className={`pill ${logScale ? "active" : ""}`}
             onClick={() => setLogScale((v) => !v)}
-            title={ko ? "로그 스케일 전환 (장기 성장률 비교에 유용)" : "Toggle logarithmic scale"}
+            title={t.logScale}
           >
-            {logScale ? (ko ? "로그 축 ON" : "Log ON") : ko ? "로그 축" : "Log scale"}
+            {logScale ? t.logScaleOn : t.logScale}
           </button>
         </div>
       </div>
@@ -607,11 +600,7 @@ export default function CompareLineChart({
       </div>
 
       <div className="compare-chart-footer">
-        <span className="muted">
-          {ko
-            ? "차트 위를 움직여 연도별 비교 · 상단 국가 칩 클릭으로 선 숨김/표시"
-            : "Hover chart to compare by year · Click country chips above to toggle lines"}
-        </span>
+        <span className="muted">{t.compareChartHint}</span>
         <span className="muted">IMF WEO (1980–2031)</span>
       </div>
     </section>

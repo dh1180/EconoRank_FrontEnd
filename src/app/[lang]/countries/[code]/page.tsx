@@ -141,7 +141,7 @@ export default async function CountryPage({ params }: Props) {
   const prevPop =
     latestPopYear !== undefined ? popByYear.get(latestPopYear - 1) : undefined;
   const popDelta = formatDelta(latestPop?.value, prevPop?.value);
-  const popTitle = populationLabel(lang);
+  const popTitle = t.population;
 
   const localizedCountry = countryName(code, data.country.name, lang);
   const origin = siteOrigin();

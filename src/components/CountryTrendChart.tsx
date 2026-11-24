@@ -159,9 +159,9 @@ export default function CountryTrendChart({
           <div className="compare-range-pills">
             {(
               [
-                ["all", ko ? "전체 (1980~)" : "All"],
+                ["all", `${t.rangeAll} (1980~)`],
                 ["2000", "2000~"],
-                ["10y", ko ? "최근 10년" : "10Y"],
+                ["10y", t.range10y],
               ] as const
             ).map(([k, lbl]) => (
               <button

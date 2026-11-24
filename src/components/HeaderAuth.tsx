@@ -76,10 +76,8 @@ export default function HeaderAuth({ lang }: { lang: Locale }) {
     }
   }
 
-  const myPageLabel =
-    lang === "ko" ? "마이페이지" : lang === "ja" ? "マイページ" : "My Page";
-  const adminLabel =
-    lang === "ko" ? "관리자" : lang === "ja" ? "管理" : "Admin";
+  const myPageLabel = t.myPage;
+  const adminLabel = t.admin;
 
   if (!loaded) return null;
 
@@ -167,13 +165,7 @@ export default function HeaderAuth({ lang }: { lang: Locale }) {
                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
                   />
                 </svg>
-                <span>
-                  {lang === "ko"
-                    ? "Google로 계속하기"
-                    : lang === "ja"
-                      ? "Googleで続行"
-                      : "Continue with Google"}
-                </span>
+                <span>{t.continueWithGoogle}</span>
               </a>
 
               <div className="vpn-notice" role="note">
