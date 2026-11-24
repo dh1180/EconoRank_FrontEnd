@@ -144,14 +144,13 @@ export default async function Compare({
             <h2>{t.choose}</h2>
             <span>2–5</span>
           </div>
-          <div className="selection-fields">
+          <div className="selection-top-row">
             <YearSelect id="compare-year" label={t.year} year={year} years={years} />
+            <button className="button selection-apply-btn" type="submit">
+              {t.apply}
+            </button>
           </div>
-          <button className="button selection-apply-btn" type="submit">
-            {t.apply}
-          </button>
           <div className="selection-body" role="group" aria-label={t.country}>
-            <p className="selection-legend">{t.country}</p>
             <CountrySelector
               key={selected.join(",")}
               countries={countries}
