@@ -4542,3 +4542,95 @@ html[data-theme="dark"] .sort-pill.active {
     grid-template-columns: 1fr;
   }
 }
+
+/* Multi-country Compare Line Chart */
+.compare-chart-panel {
+  margin-bottom: 20px;
+}
+.compare-chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.compare-range-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.compare-chart-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  margin-bottom: 0.85rem;
+}
+.compare-readout-year {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--accent);
+  padding-right: 0.5rem;
+  border-right: 1px solid var(--line);
+}
+.compare-readout-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+.compare-readout-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+}
+.compare-readout-chip i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.compare-readout-name {
+  color: var(--muted);
+}
+.compare-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.compare-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.3rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.compare-legend-toggle i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.compare-legend-toggle.off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.compare-chart-source {
+  margin-left: auto;
+  font-size: 0.78rem;
+}

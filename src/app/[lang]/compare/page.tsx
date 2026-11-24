@@ -16,6 +16,7 @@ import { countryName } from "@/lib/geography";
 import { COMPARE_COLORS } from "@/lib/palette";
 import CountrySelector from "@/components/CountrySelector";
 import CountryFlag from "@/components/CountryFlag";
+import CompareLineChart from "@/components/CompareLineChart";
 import YearSelect from "@/components/YearSelect";
 import Provenance, { statusName, editionName } from "@/components/Provenance";
 import JsonLd from "@/components/JsonLd";
@@ -62,6 +63,7 @@ export default async function Compare({
       : undefined;
   let countries: Country[] = [],
     items: Observation[] = [],
+    seriesItems: Observation[] = [],
     years: number[] = [],
     failed = false;
   try {
@@ -70,11 +72,17 @@ export default async function Compare({
       api<number[]>("/years?indicator=gdp&source=imf"),
     ]);
     if (selected.length >= 2 && selected.length <= 5) {
-      const data = await api<{ year: number; items: Observation[] }>(
-        `/compare?countries=${selected.join(",")}&source=imf${year ? `&year=${year}` : ""}`,
-      );
+      const [data, seriesData] = await Promise.all([
+        api<{ year: number; items: Observation[] }>(
+          `/compare?countries=${selected.join(",")}&source=imf${year ? `&year=${year}` : ""}`,
+        ),
+        api<{ countries: string[]; items: Observation[] }>(
+          `/compare/series?countries=${selected.join(",")}&source=imf`,
+        ),
+      ]);
       year = data.year;
       items = data.items;
+      seriesItems = seriesData.items;
     }
   } catch {
     failed = true;
@@ -192,7 +200,13 @@ export default async function Compare({
           ) : selected.length < 2 || selected.length > 5 ? (
             <p className="notice">{t.compareIntro}</p>
           ) : (
-            metrics.map((metric) => {
+            <>
+              <CompareLineChart
+                countries={chosen}
+                observations={seriesItems}
+                lang={lang}
+              />
+              {metrics.map((metric) => {
               const values = items.filter((i) => i.indicator === metric),
                 max = Math.max(1, ...values.map((i) => i.value)),
                 first = values[0];
@@ -286,7 +300,8 @@ export default async function Compare({
                   </div>
                 </article>
               );
-            })
+            })}
+            </>
           )}
         </section>
       </div>

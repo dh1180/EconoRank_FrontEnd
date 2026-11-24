@@ -18,12 +18,23 @@ export default function CountryTrendChart({
   lang: Locale;
 }) {
   const t = dictionary(lang);
+  const ko = lang === "ko";
+  const currentYear = new Date().getUTCFullYear();
   const [metric, setMetric] = useState<Metric>("gdp");
+  const [range, setRange] = useState<"all" | "2000" | "10y">("all");
   const [hoveredYear, setHoveredYear] = useState<number | null>(null);
 
-  const series = observations
+  const fullSeries = observations
     .filter((o) => o.indicator === metric)
     .sort((a, b) => a.year - b.year);
+
+  const series = fullSeries.filter((o) =>
+    range === "all"
+      ? true
+      : range === "2000"
+        ? o.year >= 2000
+        : o.year >= currentYear - 10,
+  );
 
   if (series.length < 2) return null;
 
@@ -145,6 +156,27 @@ export default function CountryTrendChart({
           )}
         </div>
         <div className="trend-legend">
+          <div className="compare-range-pills">
+            {(
+              [
+                ["all", ko ? "전체 (1980~)" : "All"],
+                ["2000", "2000~"],
+                ["10y", ko ? "최근 10년" : "10Y"],
+              ] as const
+            ).map(([k, lbl]) => (
+              <button
+                key={k}
+                type="button"
+                className={`pill ${range === k ? "active" : ""}`}
+                onClick={() => {
+                  setRange(k);
+                  setHoveredYear(null);
+                }}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
           <span>
             <i className="legend-line actual" />
             {statusName("ACTUAL", lang)}
@@ -218,8 +250,13 @@ export default function CountryTrendChart({
             />
           )}
 
-          {points.map((p) => {
+          {points.map((p, idx) => {
             const isActive = p.year === activePoint.year;
+            const step =
+              points.length > 40 ? 10 : points.length > 20 ? 5 : points.length > 12 ? 2 : 1;
+            const showLabel =
+              idx === 0 || idx === points.length - 1 || p.year % step === 0;
+            const hitW = Math.max(8, chartW / Math.max(1, points.length));
             return (
               <g
                 key={p.year}
@@ -229,9 +266,9 @@ export default function CountryTrendChart({
                 tabIndex={0}
               >
                 <rect
-                  x={p.x - 20}
+                  x={p.x - hitW / 2}
                   y={padT}
-                  width={40}
+                  width={hitW}
                   height={chartH + 24}
                   fill="transparent"
                 />
@@ -244,20 +281,24 @@ export default function CountryTrendChart({
                     className="chart-cursor"
                   />
                 )}
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={isActive ? 6 : 4}
-                  className={`chart-dot ${p.status === "ACTUAL" ? "actual" : "forecast"} ${isActive ? "active" : ""}`}
-                />
-                <text
-                  x={p.x}
-                  y={height - 10}
-                  textAnchor="middle"
-                  className={`chart-axis-text ${isActive ? "active" : ""}`}
-                >
-                  {p.year}
-                </text>
+                {(points.length <= 20 || isActive) && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isActive ? 6 : 3.5}
+                    className={`chart-dot ${p.status === "ACTUAL" ? "actual" : "forecast"} ${isActive ? "active" : ""}`}
+                  />
+                )}
+                {showLabel && (
+                  <text
+                    x={p.x}
+                    y={height - 10}
+                    textAnchor="middle"
+                    className={`chart-axis-text ${isActive ? "active" : ""}`}
+                  >
+                    {p.year}
+                  </text>
+                )}
               </g>
             );
           })}
