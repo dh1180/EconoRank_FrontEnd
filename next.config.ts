@@ -4,7 +4,13 @@ const config: NextConfig = {
   poweredByHeader: false,
   output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
+    return [
+      { source: "/api/:path*", destination: `${backend}/api/:path*` },
+      {
+        source: "/login/oauth2/code/google",
+        destination: `${backend}/api/auth/google/callback`,
+      },
+    ];
   },
   async headers() {
     return [
