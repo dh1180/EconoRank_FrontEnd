@@ -78,6 +78,8 @@ export default function HeaderAuth({ lang }: { lang: Locale }) {
 
   const myPageLabel =
     lang === "ko" ? "마이페이지" : lang === "ja" ? "マイページ" : "My Page";
+  const adminLabel =
+    lang === "ko" ? "관리자" : lang === "ja" ? "管理" : "Admin";
 
   if (!loaded) return null;
 
@@ -86,6 +88,11 @@ export default function HeaderAuth({ lang }: { lang: Locale }) {
       <div className="header-auth">
         {member ? (
           <>
+            {member.role === "ADMIN" && (
+              <Link href={`/${lang}/admin`} className="header-auth-btn admin">
+                {adminLabel}
+              </Link>
+            )}
             <Link href={`/${lang}/mypage`} className="header-auth-btn primary">
               {myPageLabel}
             </Link>
