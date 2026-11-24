@@ -1518,10 +1518,6 @@ td.numeric .value-status {
   padding: 20px;
   position: sticky;
   top: 86px;
-  max-height: calc(100vh - 104px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .selection-heading {
@@ -4726,26 +4722,19 @@ html[data-theme="dark"] .admin-tab.active {
 
 /* Compare sidebar single-scroll polish & chart direct end-labels */
 .selection fieldset {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  min-inline-size: 0;
+  display: block;
 }
 .selection .country-options,
 .selection .selector-list {
-  flex: 1 1 auto;
-  min-height: 120px;
+  height: 210px;
   max-height: 210px;
   overflow-y: auto;
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
 }
 .selection .button {
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
+  display: block;
+  width: 100%;
   margin-top: 14px;
 }
 
