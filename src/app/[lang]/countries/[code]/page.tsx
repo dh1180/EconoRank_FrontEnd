@@ -166,8 +166,14 @@ export default async function CountryPage({ params }: Props) {
         description: `${localizedCountry} ${t.gdp}, ${t.gdppc}, ${t.ppp} (${t.worldbank})`,
         url: `${origin}/${lang}/countries/${code}`,
         inLanguage: lang,
+        creator: {
+          "@type": "Organization",
+          name: "International Monetary Fund (IMF WEO)",
+          url: "https://data.imf.org/en/datasets/IMF.RES:WEO",
+        },
+        license: "https://www.imf.org/external/terms.htm",
         spatialCoverage: localizedCountry,
-        temporalCoverage: "2022/2031",
+        temporalCoverage: "1980/2031",
       },
     ],
   };

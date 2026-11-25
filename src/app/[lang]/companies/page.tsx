@@ -55,6 +55,12 @@ export default async function CompaniesPage({
         description: t.companiesLead,
         url: `${origin}/${lang}/companies`,
         inLanguage: lang,
+        creator: {
+          "@type": "Organization",
+          name: "EconoRank (sourced from CompaniesMarketCap)",
+          url: `${origin}/${lang}`,
+        },
+        license: `${origin}/${lang}/terms`,
       },
       {
         "@type": "BreadcrumbList",

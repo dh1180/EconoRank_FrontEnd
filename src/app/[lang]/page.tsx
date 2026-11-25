@@ -94,7 +94,8 @@ export default async function Rankings({
           name: "International Monetary Fund (IMF WEO)",
           url: "https://data.imf.org/en/datasets/IMF.RES:WEO",
         },
-        temporalCoverage: year ? `${year}` : "2022/2031",
+        license: "https://www.imf.org/external/terms.htm",
+        temporalCoverage: year ? `${year}` : "1980/2031",
       },
       ...(allItems.length > 0
         ? [
