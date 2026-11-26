@@ -18,7 +18,6 @@ export async function generateMetadata({
     path: "/community",
     title: t.community,
     description: t.discussionText,
-    noIndex: true,
   });
 }
 
